@@ -1,0 +1,202 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#----------------------------------------------------------------------------
+# Tsubame main file.
+#
+#----------------------------------------------------------------------------
+# Copyright 2017, Martin Kolman
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#----------------------------------------------------------------------------
+import subprocess
+import sys
+import time
+import os
+
+start_timestamp = time.time()
+
+from core import startup
+from core import paths
+
+
+PLATFORM_MODULES_FOLDER = "platform"
+
+# initialize logging
+from core import tsubame_log
+from core.signal import Signal
+tsubame_log.init_logging()
+import logging
+log = logging.getLogger("")
+
+# qrc handling
+from core import qrc
+USING_QRC = qrc.is_qrc
+qrc.handle_qrc()
+
+def set_correct_CWD():
+    # change to folder where the main tsubame file is located
+    # * this enables to run Tsubame with absolute path without adverse
+    # effect such as Tsubame not finding modules, etc.
+    current_absolute_path = os.path.dirname(os.path.abspath(__file__))
+    if USING_QRC:
+        # we are running from qrc, so just use the qrc:/ prefix as CWD,
+        # no need to chdir
+        current_absolute_path = "qrc:/"
+    else:
+        os.chdir(current_absolute_path)
+    # append the path to the bundle directory so that Tsubame can fall-back
+    # to it's bundled modules if a given module is not available on the system
+    # - at the same time just a simple "import foo" import is enough and
+    #   "from core.bundle import foo" is not needed
+    sys.path.append(os.path.join(current_absolute_path, 'core', 'bundle'))
+    # do the same thing for the backports folder, which serves a similar role
+    # as the bundle folder (TODO: merge content of backports to bundle ?)
+    sys.path.append(os.path.join(current_absolute_path, 'core', 'backports'))
+
+# before we start importing our stuff we need to correctly setup CWD
+# and Python import paths
+set_correct_CWD()
+
+# import core modules/classes
+from core import startup
+from core import utils
+from core import paths
+from core import threads
+from core import singleton
+
+# record that imports-done timestamp
+imports_done_timestamp = time.time()
+
+PLATFORM_MODULES_FOLDER = "platform"
+
+class Tsubame(object):
+    """
+    This is THE main Tsubame class.
+    """
+
+    def __init__(self):
+        singleton.tsubame = self
+
+        self.timing = []
+
+        self.add_custom_time("Tsubame start", start_timestamp)
+        self.add_custom_time("imports done", imports_done_timestamp)
+
+        self._platform_module = None
+
+        self._d = {}
+
+        self.dmod = None
+
+        # signals
+        self.shutdown_signal = Signal()
+
+        # initialize threading
+        threads.init_threading()
+
+        # add the startup handling core module
+        self.startup = startup.Startup(self)
+        self.args = self.startup.args
+
+        # start timing Tsubame launch
+        self.add_time("GUI creation")
+
+
+    def _get_module_names_from_folder(self, folder, prefix='platform_'):
+        """List a given folder and find all possible module names.
+        
+        Module names:
+        Module names start with a given prefix and don't end with .pyc or .pyo.
+        Consequences:
+        Valid modules need to have an existing .py file or be folder-modules
+        (don't name a folder module mod_foo.pyc :) ), even if they are
+        actually loaded from the .pyc or .pyo in the end.
+        This is done so that dangling .pyc/.pyo file from a module
+        that was removed are not loaded by mistake.
+        This situation shouldn't really happen if modRana is installed from a package,
+        as all .pyc files are purged during package upgrade and regenerated."""
+        if USING_QRC:
+            # if we are running from qrc, we need to use the pyotherside function for enumerating
+            # the modules stored in the qrc "bundle"
+            import pyotherside
+            moduleNames = filter(
+                lambda x: x[0:len(prefix)] == prefix, pyotherside.qrc_list_dir(os.path.join("/", folder))
+            )
+        else:
+            moduleNames = filter(
+                lambda x: x[0:len(prefix)] == prefix, os.listdir(folder)
+            )
+
+        # remove the extension
+        moduleNames = map(lambda x: os.path.splitext(x)[0], moduleNames)
+        # return a set of unique module names
+        # * like this, two module names will not be returned if there are
+        # both py and pyc files
+        return set(moduleNames)
+
+    @property
+    def available_platform_modules_by_id(self):
+        prefix = "platform_"
+        module_names = self._get_module_names_from_folder(PLATFORM_MODULES_FOLDER, prefix=prefix)
+        # remove the prefix and return the results
+        # NOTE:
+        # - .py, .pyc & .pyo should be removed already in _get_module_names_from_folder()
+        # - also sort the module names alphabetically
+        return sorted(map(lambda x: x[len(prefix):], module_names))
+
+
+    ## STARTUP TIMING ##
+
+    def add_time(self, message):
+        timestamp = time.time()
+        self.timing.append((message, timestamp))
+        return timestamp
+
+    def add_custom_time(self, message, timestamp):
+        self.timing.append((message, timestamp))
+        return timestamp
+
+    def report_startup_time(self):
+        if self.timing:
+            log.info("** Tsubame startup timing **")
+
+            # log device identificator and name
+            if self.dmod:
+                deviceName = self.dmod.getDeviceName()
+                deviceString = self.dmod.getDeviceIDString()
+                log.info("# device: %s (%s)" % (deviceName, deviceString))
+
+            tl = self.timing
+            startupTime = tl[0][1] * 1000
+            lastTime = startupTime
+            totalTime = (tl[-1][1] * 1000) - startupTime
+            for i in tl:
+                (message, t) = i
+                t *= 1000  # convert to ms
+                timeSpent = t - lastTime
+                timeSinceStart = t - startupTime
+                log.info("* %s (%1.0f ms), %1.0f/%1.0f ms", message, timeSpent, timeSinceStart, totalTime)
+                lastTime = t
+            log.info("** whole startup: %1.0f ms **" % totalTime)
+        else:
+            log.info("* timing list empty *")
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    Tsubame()
