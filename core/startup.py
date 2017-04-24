@@ -63,11 +63,11 @@ class Startup(object):
         self._search_subcommand_present = False
         self._list_subcommand_present = False
         self._stream_subcommand_present = False
-        current_subcommands = ",".join(SUBCOMMANDS.values())
+        current_subcommands = ", ".join(SUBCOMMANDS.values())
         parser = argparse.ArgumentParser(description="A flexible Twitter client.",
                                          epilog="You can also use the following subcommands: [%s] \
                                                  To see what a subcommand does use <subcommand> --help, \
-                                                 EXAMPLE: poi --help" % current_subcommands)
+                                                 EXAMPLE: account --help" % current_subcommands)
         # device
         parser.add_argument(
             '-d', metavar="device ID", type=str,
