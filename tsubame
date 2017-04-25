@@ -105,9 +105,15 @@ class Tsubame(object):
         # initialize threading
         threads.init_threading()
 
+        # paths
+        self.paths = paths.Paths(tsubame=self)
+
         # add the startup handling core module
         self.startup = startup.Startup(self)
         self.args = self.startup.args
+
+        # handle tasks requested from the CLI
+        self.startup.handle_CLI_tasks()
 
         # start timing Tsubame launch
         self.add_time("GUI creation")

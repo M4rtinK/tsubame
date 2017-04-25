@@ -27,6 +27,7 @@ log = logging.getLogger("core.paths")
 DEFAULT_PROFILE_FOLDER_NAME = "tsubame"
 CACHE_FOLDER_NAME = "cache"
 DEBUG_LOGS_FOLDER_NAME = "debug_logs"
+ACCOUNTS_FOLDER = "accounts"
 # file names
 OPTIONS_FILENAME = "options.json"
 VERSION_INFO_FILENAME = "version.txt"
@@ -95,14 +96,14 @@ def set_profile_name(name):
     _PROFILE_FOLDER_NAME = name
 
 def get_XDG_config_path():
-    """Check the contents of the $XDG_CONFIG_HOME/modrana variable and
+    """Check the contents of the $XDG_CONFIG_HOME/tsubame variable and
     default to $HOME/.config/tsubame if not set.
 
     :returns: path to the XDG config folder
     :rtype: str
     """
     return os.path.join(
-        os.environ.get("$XDG_CONFIG_HOME", os.path.join(getHOMEPath(), ".config")),
+        os.environ.get("$XDG_CONFIG_HOME", os.path.join(get_HOME_path(), ".config")),
         get_profile_name()
     )
 
@@ -114,7 +115,7 @@ def get_XDG_data_path():
     :rtype: str
     """
     return os.path.join(
-        os.environ.get("$XDG_DATA_HOME", os.path.join(getHOMEPath(), ".local/share")),
+        os.environ.get("$XDG_DATA_HOME", os.path.join(get_HOME_path(), ".local/share")),
         get_profile_name()
     )
 
@@ -126,7 +127,7 @@ def get_XDGCache_path():
     :rtype: str
     """
     return os.path.join(
-        os.environ.get("$XDG_CACHE_HOME", os.path.join(getHOMEPath(), ".cache")),
+        os.environ.get("$XDG_CACHE_HOME", os.path.join(get_HOME_path(), ".cache")),
         getProfileName()
     )
 
@@ -158,13 +159,16 @@ class Paths(object):
     def __init__(self, tsubame):
         self.tsubame = tsubame
 
+        # TODO: actually use this
         # get profile folder path
         # -> first check for device module override
-        if self.tsubame.dmod.profilePath:
-            self._profile_folder_path = self.tsubame.dmod.profile_path
-        else:
-            self._profile_folder_path = self.tsubame.get_profile_path()
-        # check the profile path and create the folders if necessary
+        # if self.tsubame.dmod.profilePath:
+        #     self._profile_folder_path = self.tsubame.dmod.profile_path
+        # else:
+        #     self._profile_folder_path = self.tsubame.get_profile_path()
+        # # check the profile path and create the folders if necessary
+
+        self._profile_folder_path = get_XDG_config_path()
         utils.create_folder_path(self._profile_folder_path)
 
     ## Important Tsubame folders ##
@@ -203,6 +207,11 @@ class Paths(object):
                 return self._assure_path_folder(self.profile_path, DEBUG_LOGS_FOLDER_NAME)
         else:
             return self._assure_path_folder(self.profile_path, DEBUG_LOGS_FOLDER_NAME)
+
+    @property
+    def accounts_folder_path(self):
+        """Return path to folder used to store account info."""
+        return self._assure_path(os.path.join(self.profile_path, ACCOUNTS_FOLDER))
 
     @property
     def version_string(self):

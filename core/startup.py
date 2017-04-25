@@ -31,6 +31,7 @@ import logging
 log = logging.getLogger("core.startup")
 
 from core import tsubame_log
+from core import account as account_module
 
 # error codes
 class StartupErrorCodes(Enum):
@@ -59,10 +60,6 @@ class Startup(object):
         self.original_stdout = None
         self.original_stderr = None
         self._subcommand_present = len(sys.argv) >= 2 and sys.argv[1] in SUBCOMMANDS
-        self._account_subcommand_present = False
-        self._search_subcommand_present = False
-        self._list_subcommand_present = False
-        self._stream_subcommand_present = False
         current_subcommands = ", ".join(SUBCOMMANDS.values())
         parser = argparse.ArgumentParser(description="A flexible Twitter client.",
                                          epilog="You can also use the following subcommands: [%s] \
@@ -114,32 +111,54 @@ class Startup(object):
                 account_subcommands = account.add_subparsers(dest="account_subcommand")
                 # add
                 account_add = account_subcommands.add_parser("add", help='add a Twitter account to Tsubame')
-                account_add.add_argument(type=str, dest="twitter_account_name", default=None, nargs="?",
-                                     help='twitter account name')
+                account_add.add_argument(type=str, dest="twitter_account_details", default=None, nargs=3,
+                                         metavar="ACCOUNT_ID ACCOUNT_TOKEN ACCOUNT_SECRET",
+                                         help='add twitter account by id, token and token secret')
+                account_add.add_argument("--name", type=str, default=None, dest="twitter_account_name",
+                                         metavar="ACCOUNT_NAME", help="optional name of the account")
 
                 # list
                 account_list = account_subcommands.add_parser("list", help='list all Twitter accounts added to Tsubame')
-                account_list.add_argument(type=str, dest="twitter_account_name", default=None, nargs="?",
-                                         help='account name to provide information about')
+                account_list.add_argument("--foo", action="store_true", dest="account_list")
 
                 # info
                 account_info = account_subcommands.add_parser("info", help='display Twitter account info')
-                account_info.add_argument(type=str, dest="twitter_account_name", default=None, nargs="?",
-                                         help='account name to provide information about')
+                account_info.add_argument(type=str, dest="twitter_account_id", default=None, nargs="?",
+                                         metavar="ACCOUNT_ID", help='account id to provide information about')
 
-                # info
+                # remove
                 account_remove = account_subcommands.add_parser("remove", help='remove Twitter account from Tsubame')
-                account_remove.add_argument(type=str, dest="twitter_account_name", default=None, nargs="?",
-                                         help='account name to provide information about')
-
-
-                # list-categories
-                account_subcommands.add_parser("list-categories", help='list POI database categories')
+                account_remove.add_argument(type=str, dest="twitter_account_id", default=None, nargs="?",
+                                            metavar="ACCOUNT_ID",help='account id to remove')
 
         self.args, _unknownArgs = parser.parse_known_args()
 
     def handle_CLI_tasks(self):
-        pass
+        # account management
+        if not self._subcommand_present:
+            # nothing to do
+            return
+
+        if self.args.account_subcommand:
+            account_manager = account_module.AccountManager(accounts_folder=self.tsubame.paths.accounts_folder_path)
+            if self.args.account_subcommand == "add":
+                account_id, token, token_secret = self.args.twitter_account_details
+                account_name = account_id
+                if self.args.twitter_account_name:
+                    account_name = self.args.twitter_account_name
+
+                new_account = account_module.TwitterAccount(id=account_id,
+                                                            name=account_name,
+                                                            token=token,
+                                                            token_secret=token_secret)
+                account_manager.add(account=new_account)
+            elif self.args.account_subcommand == "list":
+                for single_account in account_manager.accounts.values():
+                    print(single_account)
+            elif self.args.account_subcommand == "remove":
+                account_manager.remove(account_id=self.args.twitter_account_id)
+
+
 
     def _enable_stdout(self):
         """enable stdout output"""

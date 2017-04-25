@@ -8,12 +8,12 @@ class TwitterAccountClassTest(unittest.TestCase):
 
     def account_test(self):
         account = TwitterAccount(
-            identifier="avatar",
+            id="avatar",
             name = "Steve",
             token="oxium",
             token_secret="radium"
         )
-        self.assertEquals(account.identifier, "avatar")
+        self.assertEquals(account.id, "avatar")
         self.assertEquals(account.name, "Steve")
         self.assertEquals(account.token, "oxium")
         self.assertEquals(account.token_secret, "radium")
@@ -24,7 +24,7 @@ class TwitterAccountClassTest(unittest.TestCase):
             account_json_file = os.path.join(temp_dir_name, "account.json")
 
             account = TwitterAccount(
-                identifier="avatar",
+                id="avatar",
                 name = "Steve",
                 token="oxium",
                 token_secret="radium"
@@ -56,7 +56,7 @@ class TwitterAccountClassTest(unittest.TestCase):
             loaded_account = TwitterAccount.from_json_file(account_json_file)
 
             # check that the deserialized account has the expected properties
-            self.assertEquals(loaded_account.identifier, "avatar")
+            self.assertEquals(loaded_account.id, "avatar")
             self.assertEquals(loaded_account.name, "Steve")
             self.assertEquals(loaded_account.token, "oxium")
             self.assertEquals(loaded_account.token_secret, "radium")
