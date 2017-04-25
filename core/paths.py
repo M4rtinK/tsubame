@@ -167,44 +167,45 @@ class Paths(object):
         # check the profile path and create the folders if necessary
         utils.create_folder_path(self._profile_folder_path)
 
-        # load version string
-        self.version_string = None
-
-
     ## Important Tsubame folders ##
 
-    def get_profile_path(self):
+    @property
+    def profile_path(self):
         """return path to the profile folder"""
         # check if the path exists and create it if not
-        utils.createFolderPath(self._profileFolderPath)
-        return self._profileFolderPath
+        utils.create_folder_path(self._profile_folder_path)
+        return self._profile_folder_path
 
-    def get_options_file_path(self):
+    @property
+    def options_file_path(self):
         """return path to the options store filename"""
-        return os.path.join(self.getProfilePath(), OPTIONS_FILENAME)
+        return os.path.join(self.profile_path, OPTIONS_FILENAME)
 
-    def get_cache_folder_path(self):
+    @property
+    def cache_folder_path(self):
         """return path to a folder used for various cache data"""
-        path = self.modrana.dmod.cacheFolderPath
+        path = self.tsubame.dmod.cacheFolderPath
         # if no path was provided by device module, use default,
         # which is a cache folder in the profile folder
         if path is None:
-            path = os.path.join(self.getProfilePath(), CACHE_FOLDER_NAME)
+            path = os.path.join(self.profile_path, CACHE_FOLDER_NAME)
 
         return self._assure_path(path)
 
-    def get_log_folder_path(self):
+    @property
+    def log_folder_path(self):
         """return path to the log folder"""
-        if self.modrana.dmod:
-            path = self.modrana.dmod.getLogFolderPath()
+        if self.tsubame.dmod:
+            path = self.tsubame.dmod.getLogFolderPath()
             if path is not None: # None means there is no device dependent path
                 return self._assure_path(path)
             else:
-                return self._assure_path_folder(self.getProfilePath(), DEBUG_LOGS_FOLDER_NAME)
+                return self._assure_path_folder(self.profile_path, DEBUG_LOGS_FOLDER_NAME)
         else:
-            return self._assure_path_folder(self.getProfilePath(), DEBUG_LOGS_FOLDER_NAME)
+            return self._assure_path_folder(self.profile_path, DEBUG_LOGS_FOLDER_NAME)
 
-    def get_version_string(self):
+    @property
+    def version_string(self):
         """
         return current version string or None if not available
         """
@@ -219,5 +220,5 @@ class Paths(object):
     def _assure_path(self, path):
         """assure path exists and return it back"""
         # check if the path exists and create it if not
-        utils.createFolderPath(path)
+        utils.create_folder_path(path)
         return path
