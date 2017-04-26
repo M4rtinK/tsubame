@@ -121,10 +121,10 @@ class Startup(object):
                 account_list = account_subcommands.add_parser("list", help='list all Twitter accounts added to Tsubame')
                 account_list.add_argument("--foo", action="store_true", dest="account_list")
 
-                # info
-                account_info = account_subcommands.add_parser("info", help='display Twitter account info')
-                account_info.add_argument(type=str, dest="twitter_account_id", default=None, nargs="?",
-                                         metavar="ACCOUNT_ID", help='account id to provide information about')
+                # # info
+                # account_info = account_subcommands.add_parser("info", help='display Twitter account info')
+                # account_info.add_argument(type=str, dest="twitter_account_id", default=None, nargs="?",
+                #                          metavar="ACCOUNT_ID", help='account id to provide information about')
 
                 # remove
                 account_remove = account_subcommands.add_parser("remove", help='remove Twitter account from Tsubame')
