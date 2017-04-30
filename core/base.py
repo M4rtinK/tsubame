@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 #----------------------------------------------------------------------------
-# Tsubame flexible base class
-# - provides generic de/serialisation code
-# - as well as universal logging support (TBD)
+# Tsubame flexible base classes
+# - provide universal logging support
+# - as well as generic de/serialisation
 #----------------------------------------------------------------------------
 # Copyright 2017, Martin Kolman
 #
@@ -22,50 +22,14 @@
 
 import logging
 
-from .json_dict import JSONDict
-
 class TsubameBase(object):
-
+    """A common base class for non-trivial Tsubame objects.
+    
+    At the moment just adds a common logging mechanism.
+    """
     def __init__(self):
-        self._json_file_path = None
         self._logger = None
 
-    @classmethod
-    def from_dict(cls, dictionary, json_file_path=None):
-        """To be overridden by sub classes."""
-        raise NotImplementedError("The from_dict() method should be implemented by sub class.")
-
-    @classmethod
-    def from_json_file(cls, json_file_path):
-        # instantiate the class from the dictionary loaded from a json file
-        cls_instance = cls.from_dict(dictionary=JSONDict(file_path=json_file_path))
-        # set path to the origin json file
-        cls_instance.json_file_path = json_file_path
-        # the class instance should now be ready for use
-        return cls_instance
-
-    def to_dict(self):
-        return dict()
-
-    @staticmethod
-    def save_to_json_file(dictionary, file_path):
-        # If both dictionary and path are set for the
-        # JSON dict, the dictionary will be loaded to the
-        # object and the path set as file path.
-        json_dict = JSONDict(dictionary=dictionary, file_path=file_path)
-        json_dict.save()
-
-    @property
-    def json_file_path(self):
-        return self._json_file_path
-
-    @json_file_path.setter
-    def json_file_path(self, file_path):
-        self._json_file_path = file_path
-
-    def save(self):
-        self.save_to_json_file(dictionary=self.to_dict(),
-                           file_path=self.json_file_path)
 
     @property
     def log_prefix(self):
@@ -85,3 +49,62 @@ class TsubameBase(object):
         if not self._logger:
             self._logger = logging.getLogger(self.log_prefix)
         return self._logger
+
+class TsubamePersistentBase(TsubameBase):
+    """Adds a blitzdb based persistence based mechanism oon top of TsubameBase."""
+
+    @classmethod
+    def from_data(cls, data_class, json_file_path=None):
+        """To be overridden by sub classes."""
+        raise NotImplementedError("The from_dict() method should be implemented by sub class.")
+
+    @classmethod
+    def from_db(cls, db, data_class, properties):
+        # get the class from the database based on the properties
+        data_class = db.get(data_class, properties)
+        # instantiate the class based on content of the data_class
+        cls_instance = cls.from_data(data_class)
+        # set path to db & data class used
+        cls_instance.db = db
+        cls_instance.data_class = data_class
+        # the class instance should now be ready for use
+        return cls_instance
+
+    def to_dict(self):
+        return dict()
+
+    def __init__(self):
+        super(TsubamePersistentBase, self).__init__()
+        self._db = None
+        self._data_class = None
+
+    @property
+    def db(self):
+        return self._db
+
+    @db.setter
+    def db(self, new_db):
+        self._db = new_db
+
+    @property
+    def data_class(self):
+        return self._data_class
+
+    @data_class.setter
+    def data_class(self, new_data_class):
+        self._data_class = new_data_class
+
+    def save(self, commit=True):
+        if self.data_class and self.db:
+            self.data_class.save()
+            if commit:
+                self.db.commit()
+        else:
+            problem = "unknown issue"
+            if not self.data_class and not self.db:
+                problem = "data class and db not set"
+            elif not self.data_class:
+                problem = "data class not set"
+            elif not self.db:
+                problem = "db not set"
+            self.log.error("can't serialize object: %s", problem)
