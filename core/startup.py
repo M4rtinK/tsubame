@@ -25,7 +25,7 @@ import json
 import os
 import argparse
 
-from enum import Enum
+from enum import Enum, IntEnum
 
 import logging
 log = logging.getLogger("core.startup")
@@ -34,7 +34,7 @@ from core import tsubame_log
 from core import account as account_module
 
 # error codes
-class StartupErrorCodes(Enum):
+class StartupErrorCodes(IntEnum):
     API_TOKEN_FILE_MISSING=1
     API_TOKEN_FILE_INACCESSIBLE=2
     API_TOKEN_FILE_INVALID=3
@@ -112,7 +112,7 @@ class Startup(object):
                 # add
                 account_add = account_subcommands.add_parser("add", help='add a Twitter account to Tsubame')
                 account_add.add_argument(type=str, dest="twitter_account_details", default=None, nargs=3,
-                                         metavar="ACCOUNT_ID ACCOUNT_TOKEN ACCOUNT_SECRET",
+                                         # metavar=("ACCOUNT_ID", "ACCOUNT_TOKEN", "ACCOUNT_SECRET"),
                                          help='add twitter account by id, token and token secret')
                 account_add.add_argument("--name", type=str, default=None, dest="twitter_account_name",
                                          metavar="ACCOUNT_NAME", help="optional name of the account")
@@ -140,19 +140,27 @@ class Startup(object):
             return
 
         if self.args.account_subcommand:
-            account_manager = account_module.AccountManager(accounts_folder=self.tsubame.paths.accounts_folder_path)
+            account_manager = account_module.AccountManager(main_db=self.tsubame.db.main)
             if self.args.account_subcommand == "add":
                 account_id, token, token_secret = self.args.twitter_account_details
                 account_name = account_id
                 if self.args.twitter_account_name:
                     account_name = self.args.twitter_account_name
 
-                new_account = account_module.TwitterAccount(id=account_id,
-                                                            name=account_name,
-                                                            token=token,
-                                                            token_secret=token_secret)
+                new_account = account_module.TwitterAccount({"id": account_id,
+                                                            "name": account_name,
+                                                            "token": token,
+                                                            "token_secret": token_secret})
                 account_manager.add(account=new_account)
             elif self.args.account_subcommand == "list":
+                account_count = len(account_manager.accounts)
+                if account_count:
+                    if account_count > 1:
+                        print("%d accounts found:" % account_count)
+                    else:
+                        print("one account found:")
+                else:
+                    print("no accounts found")
                 for single_account in account_manager.accounts.values():
                     print(single_account)
             elif self.args.account_subcommand == "remove":
@@ -224,7 +232,7 @@ class Startup(object):
                 token_valid = False
 
             if token_valid:
-                return twiter_key, twitter_secret
+                return twitter_key, twitter_secret
             else:
                 log.critical("The Twitter API token file %s is invalid.", TWITTER_API_TOKEN_FILE)
                 exit(StartupErrorCodes.API_TOKEN_FILE_INVALID)
