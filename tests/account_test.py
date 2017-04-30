@@ -1,17 +1,21 @@
 import unittest
 import tempfile
 import os
+import sys
 
+import blitzdb
 from core.account import TwitterAccount
 
 class TwitterAccountClassTest(unittest.TestCase):
 
     def account_test(self):
-        account = TwitterAccount(
-            id="avatar",
-            name = "Steve",
-            token="oxium",
-            token_secret="radium"
+        """Check if accounts can be properly instantiated"""
+        account = TwitterAccount({
+            "id": "avatar",
+            "name": "Steve",
+            "token" : "oxium",
+            "token_secret" : "radium"
+        }
         )
         self.assertEquals(account.id, "avatar")
         self.assertEquals(account.name, "Steve")
@@ -19,47 +23,31 @@ class TwitterAccountClassTest(unittest.TestCase):
         self.assertEquals(account.token_secret, "radium")
 
     def serialisation_test(self):
+        """Check that accounts can be serialized and deserialized"""
         with tempfile.TemporaryDirectory() as temp_dir_name:
-
-            account_json_file = os.path.join(temp_dir_name, "account.json")
+            db = blitzdb.FileBackend(temp_dir_name)
 
             account = TwitterAccount(
-                id="avatar",
-                name = "Steve",
-                token="oxium",
-                token_secret="radium"
+                {
+                    "id": "avatar",
+                    "name": "Steve",
+                    "token": "oxium",
+                    "token_secret": "radium"
+                }
             )
 
             # check that the temporary folder exists (just in case)
             self.assertTrue(os.path.isdir(temp_dir_name))
 
-            # check that the file does not exist beforehand
-            self.assertFalse(os.path.isfile(account_json_file))
-
-            # the serialisation file should be None for freskly created
-            # (eq. not deserialized) class instances
-            self.assertIsNone(account.json_file_path)
-
-            # set the serialisation file path path
-            account.json_file_path = account_json_file
-
-            # check that the path is correctly set
-            self.assertEquals(account.json_file_path, account_json_file)
-
-            # serialize the account to file
-            account.save()
-
-            # check that the json file was created
-            self.assertTrue(os.path.isfile(account_json_file))
+            # serialize the account to the database
+            db.save(account)
+            db.commit()
 
             # deserialize the account from the file
-            loaded_account = TwitterAccount.from_json_file(account_json_file)
+            loaded_account = db.get(TwitterAccount, {"id": "avatar"})
 
             # check that the deserialized account has the expected properties
             self.assertEquals(loaded_account.id, "avatar")
             self.assertEquals(loaded_account.name, "Steve")
             self.assertEquals(loaded_account.token, "oxium")
             self.assertEquals(loaded_account.token_secret, "radium")
-            self.assertEquals(loaded_account.json_file_path, account_json_file)
-
-
