@@ -19,16 +19,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------------
-import subprocess
 import sys
 import time
 import os
 
 start_timestamp = time.time()
-
-from core import startup
-from core import paths
-
 
 PLATFORM_MODULES_FOLDER = "platform"
 
@@ -72,6 +67,7 @@ set_correct_CWD()
 from core import startup
 from core import utils
 from core import paths
+from core import db
 from core import threads
 from core import singleton
 
@@ -110,6 +106,7 @@ class Tsubame(object):
 
         # add the startup handling core module
         self.startup = startup.Startup(self)
+        self.db = db.DatabaseManager(profile_path=self.paths.profile_path)
         self.args = self.startup.args
 
         # handle tasks requested from the CLI
