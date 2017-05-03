@@ -50,61 +50,57 @@ class TsubameBase(object):
             self._logger = logging.getLogger(self.log_prefix)
         return self._logger
 
+
 class TsubamePersistentBase(TsubameBase):
-    """Adds a blitzdb based persistence based mechanism oon top of TsubameBase."""
+    data_defaults = {}
 
-    @classmethod
-    def from_data(cls, data_class, json_file_path=None):
-        """To be overridden by sub classes."""
-        raise NotImplementedError("The from_dict() method should be implemented by sub class.")
-
-    @classmethod
-    def from_db(cls, db, data_class, properties):
-        # get the class from the database based on the properties
-        data_class = db.get(data_class, properties)
-        # instantiate the class based on content of the data_class
-        cls_instance = cls.from_data(data_class)
-        # set path to db & data class used
-        cls_instance.db = db
-        cls_instance.data_class = data_class
-        # the class instance should now be ready for use
-        return cls_instance
-
-    def to_dict(self):
-        return dict()
-
-    def __init__(self):
+    def __init__(self, db, data):
         super(TsubamePersistentBase, self).__init__()
-        self._db = None
-        self._data_class = None
+        self._db = db
+        self._data = self._assure_expected_attributes(data)
+
+    def _assure_expected_attributes(self, data):
+        """Make sure the data storage class instance has all the expected fields.
+        
+        As the data storage class instance is accessed directly by the persistent
+        class instance, there could be issues if some properties of the data class
+        instance did not exist - an AttributeError would be raised.
+        
+        This can happen quite easily:
+        - let's have persistent class instance backed by a data class instance
+        - the persistent class has a property "foo", backed by the "foo" attribute         
+          of the data class instance
+        - the data class instance is saved to the database
+        - a new property "bar" is added to the persistent class
+        - the data class instance is deserialized, backing the modified persistent class
+        - attempt to access the "bar" property raises an attribute error as
+          the deserialized data class instance has no such attribute
+          
+        As it would be probably too costly (any annoying/error prone) to check
+        for missing attributes of the data class instance at runtime,
+        we make sure the data class instance has all expected attributes when
+        the persistent class is instantiated.
+        
+        For this the data_defaults dictionary, which holds all expected attribute names
+        and their default values is used.
+        
+        :param data: data class instance to be used for persistent class instantiation
+        :returns: data class instance with all expected attributes
+        """
+        for attribute_name, default_value in self.data_defaults.items():
+            if not hasattr(data, attribute_name):
+                data[attribute_name] = default_value
+        return data
 
     @property
     def db(self):
         return self._db
 
-    @db.setter
-    def db(self, new_db):
-        self._db = new_db
-
     @property
-    def data_class(self):
-        return self._data_class
-
-    @data_class.setter
-    def data_class(self, new_data_class):
-        self._data_class = new_data_class
+    def data(self):
+       return self._data
 
     def save(self, commit=True):
-        if self.data_class and self.db:
-            self.data_class.save()
-            if commit:
-                self.db.commit()
-        else:
-            problem = "unknown issue"
-            if not self.data_class and not self.db:
-                problem = "data class and db not set"
-            elif not self.data_class:
-                problem = "data class not set"
-            elif not self.db:
-                problem = "db not set"
-            self.log.error("can't serialize object: %s", problem)
+        self.data.save(self.db)
+        if commit:
+            self.db.commit()
