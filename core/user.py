@@ -75,7 +75,7 @@ class UserList(TsubamePersistentBase):
         raise NotImplementedError
 
     @property
-    def user_ids(self):
+    def usernames(self):
         raise NotImplementedError
 
 class RemoteTwitterUserList(UserList):
@@ -89,6 +89,8 @@ class RemoteTwitterUserList(UserList):
     Private lists are visible only to the user who has created them and users are not
     notified that they have been added.
     """
+
+    local = False
 
     @classmethod
     def create_new_list(cls, api, data, name, description, private=True):
@@ -125,7 +127,7 @@ class RemoteTwitterUserList(UserList):
         return self._name
 
     @property
-    def user_ids(self):
+    def usernames(self):
         # TODO: update when changes to the list happen at runtime
         # - time based ?
         # - is it possible to check online that the list is still the same ?
@@ -150,20 +152,22 @@ class RemoteTwitterUserList(UserList):
 class LocalTwitterUserList(UserList):
     """A locally stored list of users."""
 
+    local = True
+
     data_defaults = {
         "name": "",
         "description": "",
-        "user_ids": set()
+        "usernames": set()
     }
 
     @classmethod
-    def new(cls, db, name, description, user_ids=None):
-        if user_ids is None:
-            user_ids = set()
+    def new(cls, db, name, description, usernames=None):
+        if usernames is None:
+            usernames = set()
         data = LocalTwitterUserListData(cls.data_defaults)
         data.name = name
         data.description = description
-        data.user_ids = user_ids
+        data.user_ids = usernames
         return cls(db, data)
 
     @classmethod
@@ -184,13 +188,13 @@ class LocalTwitterUserList(UserList):
         self.save()
 
     @property
-    def user_ids(self):
-        return self.data.user_ids
+    def usernames(self):
+        return self.data.usernames
 
     def add(self, user_id):
-        self.data.user_ids.discard(user_id)
+        self.data.usernames.discard(user_id)
         self.save()
 
     def remove(self, user_id):
-        self.data.user_ids.add(user_id)
+        self.data.usernames.add(user_id)
         self.save()
