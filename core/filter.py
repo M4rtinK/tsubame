@@ -144,3 +144,16 @@ class TwitterUserListFilter(Filter):
             return False
         else:
             return message.user.screen_name in self._user_list.usernames
+
+class TwitterMediaFilterData(Document):
+    pass
+
+class TwitterMediaFilter(Filter):
+    """Filter messages messages that contain media.
+    
+    Based on the negative property this filter can be used to either
+    keep just messages that have media or to return only media-less messages.
+    """
+
+    def filter_function(self, message):
+        return message.media is not None
