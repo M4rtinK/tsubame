@@ -19,8 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------------
+
+import blitzdb
+
 from core.signal import Signal
 from core.base import TsubamePersistentBase, TsubameBase
+from core import api
 
 from enum import Enum
 
@@ -32,16 +36,18 @@ class SourceTypes(Enum):
     TWITTER_REMOTE_LIST = "source-twitter-remote-list"
     TWITTER_LOCAL_LIST = "source-twitter-local-list"
 
-class MessageSource(TsubameBase):
+class MessageSource(TsubamePersistentBase):
     """A "root" message source used by message
     streams so that they actually have something to stream. :)
     """
 
+    data_defaults = {"enabled": True}
+
     source_type = None
     root_message_source = True
 
-    def __init__(self):
-        super(MessageSource, self).__init__()
+    def __init__(self, db ,data):
+        super(MessageSource, self).__init__(db, data)
         self._messages = []
         self._latest_message_id = None
         self.refresh_done = Signal()
@@ -54,23 +60,46 @@ class MessageSource(TsubameBase):
     def latest_message_id(self):
         return self._latest_message_id
 
+    @property
+    def enabled(self):
+        return self.data.enabled
+
+    @enabled.setter
+    def enabled(self, new_state):
+        self.data.enabled = new_state
+
     def _do_refresh(self):
         raise NotImplementedError
 
     def refresh(self):
         raise NotImplementedError
 
+class TwitterMessageSourceData(blitzdb.Document):
+    pass
 
 class TwitterMessageSource(MessageSource):
-    def __init__(self, api):
-        super(TwitterMessageSource, self).__init__()
-        self._api = api
+
+    data_defaults = MessageSource.data_defaults.copy()
+    data_defaults.update({"api_username" : None})
+
+    @classmethod
+    def new(cls, db, api_username):
+        data = TwitterMessageSourceData(cls.data_defaults)
+        data.api_username = api_username
+        return cls(db, data)
+
+    def __init__(self, db, data):
+        super(TwitterMessageSource, self).__init__(db, data)
+        self._api = api.api_manager.get_twiter_api(account_username=self.data.api_username)
 
     @property
     def api(self):
         return self._api
 
     def refresh(self):
+        # skip refresh if this source is not enabled
+        if not self.enabled:
+            return
         self._do_refresh()
         new_messages = self._do_refresh()
         if new_messages:
@@ -95,46 +124,79 @@ class OwnTwitterFavourites(TwitterMessageSource):
     def _do_refresh(self):
         return self.api.GetFavorites(since_id=self.latest_message_id)
 
+class TwitterUserTweetsData(blitzdb.Document):
+    pass
 
 class TwitterUserTweets(TwitterMessageSource):
     """Tweets of a Twitter user."""
     source_type = SourceTypes.TWITTER_USER_TWEETS
 
-    def __init__(self, api, user_id):
-        super(TwitterUserTweets, self).__init__(api)
-        self._user_id = user_id
+    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults.update({"source_username": None})
+
+    @classmethod
+    def new(cls, db, api_username, source_username):
+        data = TwitterUserTweetsData(cls.data_defaults)
+        data.api_username = api_username
+        data.source_username = source_username
+        return cls(db, data)
+
+    @property
+    def source_username(self):
+        return self.data.source_username
 
     def _do_refresh(self):
-        return self.api.GetUserTimeline(user_id=self._user_id, since_id=self.latest_message_id)
+        return self.api.GetUserTimeline(user_id=self.source_username, since_id=self.latest_message_id)
 
 
 class TwitterUserFavourites(TwitterMessageSource):
     """Favourites of a Twitter user."""
     source_type = SourceTypes.TWITTER_USER_FAVOURITES
 
+    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults.update({"source_username": None})
 
-    def __init__(self, api, user_id):
-        super(TwitterUserFavourites, self).__init__(api)
-        self._user_id = user_id
+    @classmethod
+    def new(cls, db, api_username, source_username):
+        data = TwitterUserTweetsData(cls.data_defaults)
+        data.api_username = api_username
+        data.source_username = source_username
+        return cls(db, data)
+
+    @property
+    def source_username(self):
+        return self.data.source_username
 
     def _do_refresh(self):
-        return self.api.GetFavorites(user_id=self._user_id, since_id=self.latest_message_id)
+        return self.api.GetFavorites(user_id=self.source_username, since_id=self.latest_message_id)
 
 
 class TwitterRemoteList(TwitterMessageSource):
     source_type = SourceTypes.TWITTER_REMOTE_LIST
 
-    def __init__(self, api, remote_list):
-        super(TwitterRemoteList, self).__init__(api)
-        self._remote_list = remote_list
+    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults.update({"remote_list_id": None})
+
+    @classmethod
+    def new(cls, db, api_username, remote_list_id):
+        data = TwitterUserTweetsData(cls.data_defaults)
+        data.api_username = api_username
+        data.remote_list_id = remote_list_id
+        return cls(db, data)
+
+    @property
+    def remote_list_id(self):
+        return self.data.remote_list_id
 
     def _do_refresh(self):
-        return self.api.GetListTimeline(list_id=self._remote_list.list_id)
+        return self.api.GetListTimeline(list_id=self.remote_list_id)
 
 
 class TwitterLocalList(TwitterMessageSource):
     source_type = SourceTypes.TWITTER_REMOTE_LIST
 
+    # TODO: fetch tweets from all users in a local list
+    #
     # I guess there could be rate limiting issues
     # if we query tweets from many users at once
 
