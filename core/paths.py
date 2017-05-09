@@ -27,7 +27,6 @@ log = logging.getLogger("core.paths")
 DEFAULT_PROFILE_FOLDER_NAME = "tsubame"
 CACHE_FOLDER_NAME = "cache"
 DEBUG_LOGS_FOLDER_NAME = "debug_logs"
-ACCOUNTS_FOLDER = "accounts"
 # file names
 OPTIONS_FILENAME = "options.json"
 VERSION_INFO_FILENAME = "version.txt"
