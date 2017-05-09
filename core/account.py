@@ -18,8 +18,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #--------------------------------------------------------------------------
 
+from enum import Enum
+
+class AccountType(Enum):
+    TWITTER = "twitter"
+
 import blitzdb
 from core.base import TsubameBase
+
+account_manager = None
 
 class TwitterAccount(blitzdb.Document):
     """A Twitter account.
@@ -30,6 +37,8 @@ class TwitterAccount(blitzdb.Document):
     token str: Twitter access token
     token_secret str: Twitter access token secret
     """
+
+    account_type = AccountType.TWITTER
 
     def __str__(self):
         return "%s (%s) - a Twitter account" % (self.id, self.name)
@@ -96,3 +105,7 @@ class AccountManager(TsubameBase):
                 self.log.exception("account removal failed for id: %s", account_id)
         else:
             self.log.error("can't remove unknown account id: %s", account_id)
+
+def load_accounts(main_db):
+    global account_manager
+    account_manager = AccountManager(main_db=main_db)
