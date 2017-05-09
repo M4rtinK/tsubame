@@ -27,15 +27,17 @@ import blitzdb
 MAIN_DB_FOLDER = "main_db"
 
 class CustomFileBackend(blitzdb.FileBackend):
+    """Custom file backend subclass with single instance behavior added."""
 
     def __init__(self, path, **kwargs):
         super(CustomFileBackend, self).__init__(path, **kwargs)
         self._single_instance_classes = {}
 
     def get(self, cls, query, single_instance=False):
+        """Custom get() with single instance behavior added."""
         if single_instance:
             # TODO: locking ?
-            loaded_data = self.get(cls, query)
+            loaded_data = super(CustomFileBackend, self).get(cls, query)
             already_loaded_data = self._single_instance_classes.get(loaded_data.pk)
             if already_loaded_data:
                 return already_loaded_data
@@ -44,6 +46,22 @@ class CustomFileBackend(blitzdb.FileBackend):
                 return loaded_data
         else:
             return super(CustomFileBackend, self).get(cls, query)
+
+    def filter(self, cls_or_collection, query, initial_keys=None, single_instance=False):
+        """Custom filter() with single instance behavior added."""
+        if single_instance == True:
+            results = super(CustomFileBackend, self).filter(cls_or_collection, query, initial_keys)
+            single_instance_results = []
+            for result in results:
+                existing_instance = self._single_instance_classes.get(result.pk)
+                if existing_instance:
+                    single_instance_results.append(existing_instance)
+                else:
+                    single_instance_results[result.pk] = result
+                    single_instance_results.append(result)
+                return single_instance_results
+        else:
+            return super(CustomFileBackend, self).filter(cls_or_collection, query, initial_keys)
 
 
 class DatabaseManager(TsubameBase):
