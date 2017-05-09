@@ -70,11 +70,11 @@ from core import paths
 from core import db
 from core import threads
 from core import singleton
+from core import account
+from core import api
 
 # record that imports-done timestamp
 imports_done_timestamp = time.time()
-
-PLATFORM_MODULES_FOLDER = "platform"
 
 class Tsubame(object):
     """
@@ -108,6 +108,18 @@ class Tsubame(object):
         self.startup = startup.Startup(self)
         self.db = db.DatabaseManager(profile_path=self.paths.profile_path)
         self.args = self.startup.args
+
+        # load accounts
+        account.load_accounts(main_db=self.db.main)
+
+        # get Twitter app tokens
+        twitter_key, twitter_secret = self.startup.get_twitter_app_key()
+
+        # initialize API manager
+        # - this needs to be done only after twitter_accounts are loaded
+        api.initialize_api_manager(account_manager=account.account_manager,
+                                   twitter_key=twitter_key,
+                                   twitter_secret=twitter_secret)
 
         # handle tasks requested from the CLI
         self.startup.handle_CLI_tasks()
