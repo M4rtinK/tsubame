@@ -9,7 +9,7 @@ from core.account import TwitterAccount
 class TwitterAccountClassTest(unittest.TestCase):
 
     def account_test(self):
-        """Check if accounts can be properly instantiated"""
+        """Check if twitter_accounts can be properly instantiated"""
         account = TwitterAccount({
             "username": "avatar",
             "name": "Steve",
@@ -23,7 +23,7 @@ class TwitterAccountClassTest(unittest.TestCase):
         self.assertEquals(account.token_secret, "radium")
 
     def serialisation_test(self):
-        """Check that accounts can be serialized and deserialized"""
+        """Check that twitter_accounts can be serialized and deserialized"""
         with tempfile.TemporaryDirectory() as temp_dir_name:
             db = blitzdb.FileBackend(temp_dir_name)
 

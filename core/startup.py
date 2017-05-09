@@ -118,7 +118,7 @@ class Startup(object):
                                          metavar="ACCOUNT_NAME", help="optional name of the account")
 
                 # list
-                account_list = account_subcommands.add_parser("list", help='list all Twitter accounts added to Tsubame')
+                account_list = account_subcommands.add_parser("list", help='list all Twitter twitter_accounts added to Tsubame')
                 account_list.add_argument("--foo", action="store_true", dest="account_list")
 
                 # # info
@@ -153,15 +153,15 @@ class Startup(object):
                                                             "token_secret": token_secret})
                 account_manager.add(account=new_account)
             elif self.args.account_subcommand == "list":
-                account_count = len(account_manager.accounts)
+                account_count = len(account_manager.twitter_accounts)
                 if account_count:
                     if account_count > 1:
-                        print("%d accounts found:" % account_count)
+                        print("%d twitter_accounts found:" % account_count)
                     else:
                         print("one account found:")
                 else:
-                    print("no accounts found")
-                for single_account in account_manager.accounts.values():
+                    print("no twitter_accounts found")
+                for single_account in account_manager.twitter_accounts.values():
                     print(single_account)
             elif self.args.account_subcommand == "remove":
                 account_manager.remove(account_username=self.args.twitter_account_id)

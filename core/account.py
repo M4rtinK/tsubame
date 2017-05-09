@@ -61,16 +61,16 @@ class AccountManager(TsubameBase):
         #     if len(self._accounts):
         #         self.log.info("found a single account")
         #     else:
-        #         self.log.info("found %d accounts", len(self._accounts))
+        #         self.log.info("found %d twitter_accounts", len(self._accounts))
         # else:
-        #     self.log.info("no accounts found")
+        #     self.log.info("no twitter_accounts found")
 
     @property
     def log_prefix(self):
         return "core.account.manager"
 
     @property
-    def accounts(self):
+    def twitter_accounts(self):
         return self._accounts
 
     def add(self, account, replace=False):
