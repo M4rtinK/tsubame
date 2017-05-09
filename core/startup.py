@@ -112,8 +112,8 @@ class Startup(object):
                 # add
                 account_add = account_subcommands.add_parser("add", help='add a Twitter account to Tsubame')
                 account_add.add_argument(type=str, dest="twitter_account_details", default=None, nargs=3,
-                                         # metavar=("ACCOUNT_ID", "ACCOUNT_TOKEN", "ACCOUNT_SECRET"),
-                                         help='add twitter account by id, token and token secret')
+                                         # metavar=("ACCOUNT_USERNAME", "ACCOUNT_TOKEN", "ACCOUNT_SECRET"),
+                                         help='add twitter account by username, token and token secret')
                 account_add.add_argument("--name", type=str, default=None, dest="twitter_account_name",
                                          metavar="ACCOUNT_NAME", help="optional name of the account")
 
@@ -142,12 +142,12 @@ class Startup(object):
         if self.args.account_subcommand:
             account_manager = account_module.AccountManager(main_db=self.tsubame.db.main)
             if self.args.account_subcommand == "add":
-                account_id, token, token_secret = self.args.twitter_account_details
-                account_name = account_id
+                account_username, token, token_secret = self.args.twitter_account_details
+                account_name = account_username
                 if self.args.twitter_account_name:
                     account_name = self.args.twitter_account_name
 
-                new_account = account_module.TwitterAccount({"id": account_id,
+                new_account = account_module.TwitterAccount({"username": account_username,
                                                             "name": account_name,
                                                             "token": token,
                                                             "token_secret": token_secret})
@@ -164,7 +164,7 @@ class Startup(object):
                 for single_account in account_manager.accounts.values():
                     print(single_account)
             elif self.args.account_subcommand == "remove":
-                account_manager.remove(account_id=self.args.twitter_account_id)
+                account_manager.remove(account_username=self.args.twitter_account_id)
 
 
 

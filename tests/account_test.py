@@ -11,13 +11,13 @@ class TwitterAccountClassTest(unittest.TestCase):
     def account_test(self):
         """Check if accounts can be properly instantiated"""
         account = TwitterAccount({
-            "id": "avatar",
+            "username": "avatar",
             "name": "Steve",
             "token" : "oxium",
             "token_secret" : "radium"
         }
         )
-        self.assertEquals(account.id, "avatar")
+        self.assertEquals(account.username, "avatar")
         self.assertEquals(account.name, "Steve")
         self.assertEquals(account.token, "oxium")
         self.assertEquals(account.token_secret, "radium")
@@ -29,7 +29,7 @@ class TwitterAccountClassTest(unittest.TestCase):
 
             account = TwitterAccount(
                 {
-                    "id": "avatar",
+                    "username": "avatar",
                     "name": "Steve",
                     "token": "oxium",
                     "token_secret": "radium"
@@ -44,10 +44,10 @@ class TwitterAccountClassTest(unittest.TestCase):
             db.commit()
 
             # deserialize the account from the file
-            loaded_account = db.get(TwitterAccount, {"id": "avatar"})
+            loaded_account = db.get(TwitterAccount, {"username": "avatar"})
 
             # check that the deserialized account has the expected properties
-            self.assertEquals(loaded_account.id, "avatar")
+            self.assertEquals(loaded_account.username, "avatar")
             self.assertEquals(loaded_account.name, "Steve")
             self.assertEquals(loaded_account.token, "oxium")
             self.assertEquals(loaded_account.token_secret, "radium")

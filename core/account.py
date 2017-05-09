@@ -32,7 +32,7 @@ class TwitterAccount(blitzdb.Document):
     """A Twitter account.
     
     Expected attributes:    
-    id str: unique account id
+    username str: unique account username
     name str: human readable account name
     token str: Twitter access token
     token_secret str: Twitter access token secret
@@ -41,7 +41,7 @@ class TwitterAccount(blitzdb.Document):
     account_type = AccountType.TWITTER
 
     def __str__(self):
-        return "%s (%s) - a Twitter account" % (self.id, self.name)
+        return "%s (%s) - a Twitter account" % (self.username, self.name)
 
 class AccountManager(TsubameBase):
     """Service account management."""
@@ -55,7 +55,7 @@ class AccountManager(TsubameBase):
         accounts = self._main_db.filter(TwitterAccount, {})
 
         for account in accounts:
-            self._accounts[account.id] = account
+            self._accounts[account.username] = account
 
         # if self._accounts:
         #     if len(self._accounts):
@@ -77,7 +77,7 @@ class AccountManager(TsubameBase):
         # We could just add the account to the database,
         # but we want to prevent unwanted account overwrites,
         # so we use this function and the account manager.
-        if account.id in self._accounts.keys() and not replace:
+        if account.username in self._accounts.keys() and not replace:
             self.log.error("can't add account %s - already present")
             return False
 
@@ -87,24 +87,24 @@ class AccountManager(TsubameBase):
             account.save(self._main_db)
             self._main_db.commit()
             # add it to tracking
-            self._accounts[account.id] = account
+            self._accounts[account.username] = account
             self.log.info("account has been added: %s", account)
         except:
-            self.log.exception("can't save added account %s", account.id)
+            self.log.exception("can't save added account %s", account.username)
             return False
 
-    def remove(self, account_id):
-        account = self._accounts.get(account_id)
+    def remove(self, account_username):
+        account = self._accounts.get(account_username)
         if account:
             try:
                 self._main_db.delete(account)
                 self._main_db.commit()
-                del self._accounts[account_id]
-                self.log.info("account %s has been removed", account_id)
+                del self._accounts[account_username]
+                self.log.info("account %s has been removed", account_username)
             except Exception:
-                self.log.exception("account removal failed for id: %s", account_id)
+                self.log.exception("account removal failed for username: %s", account_username)
         else:
-            self.log.error("can't remove unknown account id: %s", account_id)
+            self.log.error("can't remove unknown account username: %s", account_username)
 
 def load_accounts(main_db):
     global account_manager
