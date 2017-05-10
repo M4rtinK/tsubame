@@ -41,7 +41,7 @@ class Filter(TsubamePersistentBase):
         
         Negative == matching messages will be dropped. 
         """
-        return not self.data.positive
+        return self.data.positive
 
     @positive.setter
     def positive(self, positive_value):
