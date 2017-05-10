@@ -25,6 +25,7 @@ import blitzdb
 from core.signal import Signal
 from core.base import TsubamePersistentBase, TsubameBase
 from core import api
+from core import group
 
 from enum import Enum
 
@@ -297,6 +298,16 @@ class MessageStream(TsubamePersistentBase):
                     self.log.error("Input source class not found for data: %s",
                                    input_data)
         return self._inputs
+
+    def filters(self):
+        if self._filter_group is None:
+            # first look if we have something in data
+            if self.data.filter_group:
+                self._filter_group = group.FilterGroup(self.db, self.data.filter_group)
+            else:  # create a new filter group
+                self._filter_group = group.FilterGroup.new(self.db)
+                self.data.filter_group = self._filter_group.data
+        return self._filter_group
 
     def refresh(self):
         self._do_refresh()
