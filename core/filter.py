@@ -157,3 +157,10 @@ class TwitterMediaFilter(Filter):
 
     def filter_function(self, message):
         return message.media is not None
+
+
+CLASS_MAP = {
+    TwitterUserFilterData : TwitterUserFilter,
+    TwitterUserListFilterData : TwitterUserListFilter,
+    TwitterMediaFilterData : TwitterMediaFilter
+}
