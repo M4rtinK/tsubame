@@ -101,6 +101,14 @@ class TwitterUserFilter(Filter):
         data.username = username
         return cls(db, data)
 
+    @property
+    def username(self):
+        return self.data.username
+
+    @username.setter
+    def username(self, new_username):
+        self.data.username = new_username
+
     def filter_function(self, message):
         #TODO: check what's actually in the results returned by python-twitter
         return message.user.screen_name == self.data.username
