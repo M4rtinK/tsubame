@@ -104,3 +104,16 @@ class TsubamePersistentBase(TsubameBase):
         self.data.save(self.db)
         if commit:
             self.db.commit()
+
+    def delete(self, commit=True):
+        """Delete backing data for this persistent object from the database.
+        
+        Note that this actually does not delete the content of
+        the backing data instance.
+        
+        :param bool commit: commit the delete operation to the
+                            database at once
+        """
+        self.data.delete(backend=self.db)
+        if commit:
+            self.db.commit()
