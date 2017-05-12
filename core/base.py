@@ -101,7 +101,12 @@ class TsubamePersistentBase(TsubameBase):
        return self._data
 
     def save(self, commit=True):
-        self.data.save(self.db)
+        """Save backing data of this object to the database.
+        
+        :param bool commit: commit the save operation to the
+                            database at once
+        """
+        self.data.save(backend=self.db)
         if commit:
             self.db.commit()
 
