@@ -18,30 +18,61 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #--------------------------------------------------------------------------
 
-from enum import Enum
-
-class AccountType(Enum):
-    TWITTER = "twitter"
-
 import blitzdb
-from core.base import TsubameBase
+from core.base import TsubameBase, TsubamePersistentBase
 
 account_manager = None
 
-class TwitterAccount(blitzdb.Document):
-    """A Twitter account.
-    
-    Expected attributes:    
-    username str: unique account username
-    name str: human readable account name
-    token str: Twitter access token
-    token_secret str: Twitter access token secret
-    """
+class TwitterAccountData(blitzdb.Document):
+    pass
 
-    account_type = AccountType.TWITTER
+
+class TwitterAccount(TsubamePersistentBase):
+
+    data_defaults = {
+        "username" : None,
+        "name" : None,
+        "token" : None,
+        "token_secret" : None
+    }
+
+    @classmethod
+    def new(cls, db, username, token, token_secret, name=None):
+        data = TwitterAccountData(cls.data_defaults)
+        data.username = username
+        data.name = name
+        data.token = token
+        data.token_secret = token_secret
+        return cls(db, data)
+
+    @classmethod
+    def from_db(cls, db, username):
+        data = db.get(TwitterAccountData, {"username" : username})
+        return cls(db, data)
+
+    @property
+    def username(self):
+        return self.data.username
+
+    @property
+    def name(self):
+        return self.data.name
+
+    @name.setter
+    def name(self, new_name):
+        self.data.name = new_name
+
+    @property
+    def token(self):
+        return self.data.token
+
+    @property
+    def token_secret(self):
+        return self.data.token_secret
 
     def __str__(self):
-        return "%s (%s) - a Twitter account" % (self.username, self.name)
+        return "%s (%s) - a Twitter account" % (self.data.username, self.data.name)
+
 
 class AccountManager(TsubameBase):
     """Service account management."""
@@ -52,10 +83,10 @@ class AccountManager(TsubameBase):
         self._main_db = main_db
 
         # load stored accounts (if any)
-        accounts = self._main_db.filter(TwitterAccount, {})
+        account_data = self._main_db.filter(TwitterAccountData, {})
 
-        for account in accounts:
-            self._accounts[account.username] = account
+        for data in account_data:
+            self._accounts[data.username] = TwitterAccount(main_db, data)
 
         # if self._accounts:
         #     if len(self._accounts):
@@ -84,21 +115,19 @@ class AccountManager(TsubameBase):
         # add the account to the database
         try:
             # save the account
-            account.save(self._main_db)
-            self._main_db.commit()
+            account.save(commit=True)
             # add it to tracking
             self._accounts[account.username] = account
             self.log.info("account has been added: %s", account)
         except:
-            self.log.exception("can't save added account %s", account.username)
+            self.log.exception("can't save added account %s", account)
             return False
 
     def remove(self, account_username):
         account = self._accounts.get(account_username)
         if account:
             try:
-                self._main_db.delete(account)
-                self._main_db.commit()
+                account.delete(commit=True)
                 del self._accounts[account_username]
                 self.log.info("account %s has been removed", account_username)
             except Exception:

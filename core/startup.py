@@ -147,10 +147,13 @@ class Startup(object):
                 if self.args.twitter_account_name:
                     account_name = self.args.twitter_account_name
 
-                new_account = account_module.TwitterAccount({"username": account_username,
-                                                            "name": account_name,
-                                                            "token": token,
-                                                            "token_secret": token_secret})
+                new_account = account_module.TwitterAccount.new(
+                    db=self.tsubame.db.main,
+                    username=account_username,
+                    name=account_name,
+                    token=token,
+                    token_secret=token_secret
+                )
                 account_manager.add(account=new_account)
             elif self.args.account_subcommand == "list":
                 account_count = len(account_manager.twitter_accounts)
