@@ -212,10 +212,10 @@ class Startup(object):
         if os.path.isfile(TWITTER_API_TOKEN_FILE):
             tokens = {}
             try:
-                with open(TWITTER_API_TOKEN_FILE, "rb") as token_file:
+                with open(TWITTER_API_TOKEN_FILE, "rt") as token_file:
                     tokens = json.load(token_file)
             except Exception:
-                log.exception("Can't open Twitter PIT token file.")
+                log.exception("Can't open Twitter API token file.")
 
                 exit(StartupErrorCodes.API_TOKEN_FILE_INACCESSIBLE)
             twitter_key = tokens.get("consumer_key")
