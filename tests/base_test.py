@@ -3,6 +3,7 @@ import tempfile
 import blitzdb
 
 from core.base import TsubameBase, TsubamePersistentBase
+from core.db import CustomFileBackend
 
 class BaseClassTest(unittest.TestCase):
 
@@ -21,7 +22,7 @@ class BaseClassTest(unittest.TestCase):
             pass
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
-            db = blitzdb.FileBackend(temp_dir_name)
+            db = CustomFileBackend(temp_dir_name)
             data = TestClassData()
             tci = TsubamePersistentBase(db, data)
             self.assertEquals(tci.db, db)

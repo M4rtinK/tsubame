@@ -3,12 +3,13 @@ import tempfile
 import blitzdb
 
 from core import filter
+from core.db import CustomFileBackend
 
 class FilterTestCase(unittest.TestCase):
 
     def instantiation_test(self):
         with tempfile.TemporaryDirectory() as temp_dir_name:
-            db = blitzdb.FileBackend(temp_dir_name)
+            db = CustomFileBackend(temp_dir_name)
 
             # first lets test the Twitter user filter
             twitter_user_filter = filter.TwitterUserFilter.new(db=db, username="such_user")

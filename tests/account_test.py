@@ -5,13 +5,14 @@ import sys
 
 import blitzdb
 from core.account import TwitterAccount
+from core.db import CustomFileBackend
 
 class TwitterAccountClassTest(unittest.TestCase):
 
     def account_test(self):
         """Check if twitter_accounts can be properly instantiated"""
         with tempfile.TemporaryDirectory() as temp_dir_name:
-            db = blitzdb.FileBackend(temp_dir_name)
+            db = CustomFileBackend(temp_dir_name)
 
             account = TwitterAccount.new(db, username="avatar", token="oxium",
                                          token_secret="radium", name="Steve")
@@ -23,7 +24,7 @@ class TwitterAccountClassTest(unittest.TestCase):
     def serialisation_test(self):
         """Check that twitter_accounts can be serialized and deserialized"""
         with tempfile.TemporaryDirectory() as temp_dir_name:
-            db = blitzdb.FileBackend(temp_dir_name)
+            db = CustomFileBackend(temp_dir_name)
 
             account = TwitterAccount.new(db, username="avatar", token="oxium",
                                          token_secret="radium", name="Steve")
