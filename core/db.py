@@ -77,7 +77,6 @@ class CustomFileBackend(blitzdb.FileBackend):
                 # It might be a better solution to prevent multiple creation
                 # of single instance document instances.
             else:
-                print("ADDING TO TRACKING %s" % obj)
                 self._single_instance_classes[obj.pk] = obj
 
 
