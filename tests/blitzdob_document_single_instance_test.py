@@ -59,3 +59,23 @@ class TsubameDbTest(unittest.TestCase):
             single_instance = db_connection.get(DataStorageClass, {"foo" : 1}, single_instance=True)
             self.assertEqual(separate_instance.bar, 3)
             self.assertEqual(single_instance.bar, 3)
+
+    def single_instance_save_test(self):
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            """Check that single_instance works correctly for save()"""
+            db_connection = db.CustomFileBackend(temp_dir_name)
+            data = DataStorageClass({"foo" : 1,
+                                     "bar" : 2})
+            db_connection.save(data, single_instance=True)
+            db_connection.commit()
+
+            data1 = db_connection.get(DataStorageClass, {"foo" : 1}, single_instance=True)
+            self.assertEquals(data.bar, 2)
+            self.assertEquals(data1.bar, 2)
+            # check that we really got the same instance
+            data1.bar = 3
+            self.assertEquals(data.bar, 3)
+            self.assertEquals(data1.bar, 3)
+            data.bar = 5
+            self.assertEquals(data.bar, 5)
+            self.assertEquals(data1.bar, 5)

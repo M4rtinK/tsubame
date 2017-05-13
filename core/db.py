@@ -20,11 +20,14 @@
 #----------------------------------------------------------------------------
 
 import os
+import logging
 
 from core.base import TsubameBase
 import blitzdb
 
 MAIN_DB_FOLDER = "main_db"
+
+log = logging.getLogger("core.db")
 
 class CustomFileBackend(blitzdb.FileBackend):
     """Custom file backend subclass with single instance behavior added."""
@@ -62,6 +65,20 @@ class CustomFileBackend(blitzdb.FileBackend):
                 return single_instance_results
         else:
             return super(CustomFileBackend, self).filter(cls_or_collection, query, initial_keys)
+
+    def save(self, obj, call_hook = True, single_instance=False):
+        """Custom save() with single instance behavior added."""
+        super(CustomFileBackend, self).save(obj, call_hook)
+        if single_instance == True:
+            already_loaded_data = self._single_instance_classes.get(obj.pk)
+            if already_loaded_data:
+                log.warning("there is already a single instance loaded for %s" % obj)
+                # TODO: how do we resolve this ? (and can we solve it ?)
+                # It might be a better solution to prevent multiple creation
+                # of single instance document instances.
+            else:
+                print("ADDING TO TRACKING %s" % obj)
+                self._single_instance_classes[obj.pk] = obj
 
 
 class DatabaseManager(TsubameBase):
