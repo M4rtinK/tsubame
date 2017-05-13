@@ -54,6 +54,8 @@ class TsubameBase(object):
 class TsubamePersistentBase(TsubameBase):
     data_defaults = {}
 
+    single_data_instance = False
+
     def __init__(self, db, data):
         super(TsubamePersistentBase, self).__init__()
         self._db = db
@@ -106,7 +108,7 @@ class TsubamePersistentBase(TsubameBase):
         :param bool commit: commit the save operation to the
                             database at once
         """
-        self.data.save(backend=self.db)
+        self.db.save(self.data, single_instance=self.single_data_instance)
         if commit:
             self.db.commit()
 
