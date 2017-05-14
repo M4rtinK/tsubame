@@ -20,46 +20,102 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #----------------------------------------------------------------------------
 
-from blitzdb import Document
+import blitzdb
+from threading import RLock
 from core.base import TsubameBase, TsubamePersistentBase
 
+class LocalTwitterUserListData(blitzdb.Document):
+    pass
 
-class LocalTwitterUserListData(Document):
+class UsernameNotInList(Exception):
     pass
 
 class User(TsubamePersistentBase):
 
-    def __init__(self, id, name=""):
-        super(User, self).__init__()
-        self._id = id
-        self._name = name
-        self._custom_note=""
+    single_data_instance = True
+
+    data_defaults = {"username" : None,
+                     "name" : None,
+                     "description" : "",
+                     "custom_note" : ""}
 
     @property
-    def id(self):
-        return self._id
+    def username(self):
+        return self.data.username
 
     @property
     def name(self):
-        return self._name
+        return self.data.name
 
     @name.setter
     def name(self, new_name):
         """Unlike user id, user name can be changed (at least on Twitter)."""
-        self._name = new_name
+        self.data.name = new_name
+
+    @property
+    def description(self):
+        return self.data.description
+
+    @description.setter
+    def description(self, new_description):
+        self.data.description = new_description
 
     @property
     def custom_note(self):
         """Custom arbitrary information about the user."""
-        return self._custom_note
+        return self.data.custom_note
 
     @custom_note.setter
     def custom_note(self, note_content):
-        self._custom_note = note_content
+        self.data.custom_note = note_content
+
+class TwitterUserData(blitzdb.Document):
+    pass
 
 class TwitterUser(User):
-    def __init__(self, id, name=""):
-        super(TwitterUser, self).__init__(id, name=name)
+
+    @staticmethod
+    def _get_existing(db, username):
+        """Get user data from the database.
+        
+        Return it if it exists and return None if not.
+        """
+        existing_data = False
+        try:
+            existing_data = db.get(TwitterUserData, {"username" : username}, single_instance=True)
+        except blitzdb.Document.DoesNotExist:
+            return None
+        return existing_data
+
+    @classmethod
+    def new(cls, db, username, name=None):
+        data = cls._get_existing(db, username)
+        if data is None:
+            data = TwitterUserData(cls.data_defaults.copy())
+            data.username = username
+            if name is None:
+                name = username
+            data.name = name
+        return cls(db, data)
+
+    @classmethod
+    def from_twitter_user(cls, db, twitter_user):
+        data = cls._get_existing(db, twitter_user.screen_name)
+        if data is None:
+            data = TwitterUserData(cls.data_defaults.copy())
+            data.username = twitter_user.screen_name
+            data.name = twitter_user.name
+            data.description = twitter_user.description
+        return cls(db, data)
+
+    @classmethod
+    def from_db(cls, db, username):
+        data = db.get(TwitterUserData, {"username" : username}, single_instance=True)
+        return cls(db, data)
+
+    def __str__(self):
+        return "%s (%s) - a Twitter user" % (self.username, self.name)
+
 
 
 class UserList(TsubamePersistentBase):
@@ -68,10 +124,10 @@ class UserList(TsubamePersistentBase):
     def __init__(self, db, data):
         super(UserList, self).__init__(db, data)
 
-    def add(self, user_id):
+    def add(self, username):
         raise NotImplementedError
 
-    def remove(self, user_id):
+    def remove(self, username):
         raise NotImplementedError
 
     @property
@@ -137,46 +193,62 @@ class RemoteTwitterUserList(UserList):
             self._user_ids = set(m.id for m in members)
         return self._user_ids
 
-    def add(self, user_id):
+    def add(self, username):
         # add the user id to the remote list
-        self._api.CreateListMember(list_id=self.list_id, user_id=user_id)
+        self._api.CreateListMember(list_id=self.list_id, user_id=username)
         # add the id to local cache
-        self._user_ids.add(user_id)
+        self._user_ids.add(username)
 
-    def remove(self, user_id):
+    def remove(self, username):
         # remove the user user id from the remote list
-        self._api.DestroyListMember(list_id=self.list_id, user_id=user_id)
+        self._api.DestroyListMember(list_id=self.list_id, user_id=username)
         # remove the user id from the local cache
-        self._user_ids.discard(user_id)
+        self._user_ids.discard(username)
 
 class LocalTwitterUserList(UserList):
     """A locally stored list of users."""
+
+    single_data_instance = True
 
     local = True
 
     data_defaults = {
         "name": "",
         "description": "",
-        "usernames": set()
+        "users": dict(),
+        "insertion_order" : []
     }
 
     @classmethod
-    def new(cls, db, name, description, usernames=None):
-        if usernames is None:
-            usernames = set()
+    def new(cls, db, name, description, users=None):
+        if users is None:
+            users = []
         data = LocalTwitterUserListData(cls.data_defaults)
         data.name = name
         data.description = description
-        data.user_ids = usernames
+        # Note that we actually don't pass the functional Twitter user
+        # object instance, but just the backing data instance.
+        # Looks like this should not cause any issues - at least for now. ;-)
+        for user in users:
+            data.users[user.username] = user.data
+            data.insertion_order.append(user.username)
         return cls(db, data)
 
     @classmethod
     def from_db(cls, db, name):
-        data = db.get(LocalTwitterUserListData, {"name": name})
+        data = db.get(LocalTwitterUserListData, {"name": name}, single_instance=True)
         return cls(db, data)
 
     def __init__(self, db, data):
         super(LocalTwitterUserList, self).__init__(db, data)
+        self._lock = RLock()
+        self._users = None
+
+    def _init_users(self):
+        """Create functional objects for our user data."""
+        self._users = {}
+        for user_data in self.data.users.values():
+            self._users[user_data.username] = TwitterUser(self.db, user_data)
 
     @property
     def name(self):
@@ -188,13 +260,54 @@ class LocalTwitterUserList(UserList):
         self.save()
 
     @property
+    def description(self):
+        return self.data.description
+
+    @description.setter
+    def description(self, new_description):
+        self.data.description = new_description
+
+    @property
     def usernames(self):
-        return self.data.usernames
+        with self._lock:
+            return self.data.users.keys()
 
-    def add(self, user_id):
-        self.data.usernames.discard(user_id)
-        self.save()
+    @property
+    def users(self):
+        with self._lock:
+            # how fast is comparing of two keys() outputs in Python ?
+            if self._users is None or self._users.keys() != self.data.users.keys():
+                self._init_users()
+            return self._users
 
-    def remove(self, user_id):
-        self.data.usernames.add(user_id)
-        self.save()
+    def add(self, user):
+        with self._lock:
+            self._users[user.username] = user
+            self.data.users[user.username] = user.data
+            # make sure the username is not in the insertion order list
+            try:
+                self.data.insertion_order.remove(user.username)
+            except ValueError:
+                pass
+            self.data.insertion_order.append(user.username)
+            self.save()
+
+    def remove(self, username):
+        with self._lock:
+            if username in self.data.users:
+                del self._users[username]
+                del self.data.users[username]
+                # remove the username from the insertion order list
+                try:
+                    self.data.insertion_order.remove(username)
+                except ValueError:
+                    pass
+                self.save()
+            else:
+                raise UsernameNotInList
+
+    def save(self, commit=True):
+        # we should use the lock also in the save function as the add
+        # and remove methods modify the backing data object
+        with self._lock:
+            super(LocalTwitterUserList, self).save(commit=commit)
