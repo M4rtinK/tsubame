@@ -108,6 +108,7 @@ class TwitterMessageSource(MessageSource):
             self._latest_message_id = new_messages[-1].id
             self._messages.append(new_messages)
         self.refresh_done()
+        return new_messages
 
 
 class OwnTwitterTimelineData(blitzdb.Document):
@@ -279,7 +280,6 @@ class MessageStream(TsubamePersistentBase):
         self._messages = []
         self._inputs = None
         self._filter_group = None
-        self._latest_message_id = None
         self.refresh_done = Signal()
 
     def inputs(self):
@@ -299,6 +299,7 @@ class MessageStream(TsubamePersistentBase):
                                    input_data)
         return self._inputs
 
+    @property
     def filters(self):
         if self._filter_group is None:
             # first look if we have something in data
@@ -313,16 +314,23 @@ class MessageStream(TsubamePersistentBase):
         self._do_refresh()
         new_messages = self._do_refresh()
         if new_messages:
-            self._latest_message_id = new_messages[-1].id
-            self._messages.append(new_messages)
+            self._messages.extend(new_messages)
         self.refresh_done()
+        return new_messages
 
     def _do_refresh(self):
-        raise NotImplementedError
+        new_messages = []
+        # get new messages
+        for source in self._inputs:
+            new_messages.extend(source.refresh())
+        # let's try to sort the messages
+        # - this might or might not work as expected :)
+        new_messages.sort()
+        # filter the new messages
+        new_messages = self.filters.filter_messages(new_messages)
+        # return the result
+        return new_messages
 
-    @property
-    def latest_message_id(self):
-        return self._latest_message_id
 
 # mapping of data classes to functional classes
 CLASS_MAP = {
