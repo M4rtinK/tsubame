@@ -107,6 +107,11 @@ class FilterGroup(Group):
                 items.append(cls(self.db, item_data))
         return items
 
+    def filter_messages(self, messages):
+        for single_filter in self.items:
+            messages = single_filter.filter_messages(messages)
+        return list(messages)  # make sure we return a list of messages
+
 
 
 
