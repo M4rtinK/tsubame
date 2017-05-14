@@ -91,7 +91,7 @@ class FilterGroup(Group):
 
     @classmethod
     def new(cls, db):
-        data = FilterGroupData(cls.data_defaults)
+        data = FilterGroupData(cls.data_defaults.copy())
         return cls(db, data)
 
     def _get_items(self):

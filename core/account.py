@@ -38,7 +38,7 @@ class TwitterAccount(TsubamePersistentBase):
 
     @classmethod
     def new(cls, db, username, token, token_secret, name=None):
-        data = TwitterAccountData(cls.data_defaults)
+        data = TwitterAccountData(cls.data_defaults.copy())
         data.username = username
         data.name = name
         data.token = token

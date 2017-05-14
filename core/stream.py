@@ -120,7 +120,7 @@ class OwnTwitterTimeline(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username):
-        data = OwnTwitterTimelineData(cls.data_defaults)
+        data = OwnTwitterTimelineData(cls.data_defaults.copy())
         data.api_username = api_username
         return cls(db, data)
 
@@ -140,7 +140,7 @@ class OwnTwitterFavourites(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username):
-        data = OwnTwitterFavouritesData(cls.data_defaults)
+        data = OwnTwitterFavouritesData(cls.data_defaults.copy())
         data.api_username = api_username
         return cls(db, data)
 
@@ -161,7 +161,7 @@ class TwitterUserTweets(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username, source_username):
-        data = TwitterUserTweetsData(cls.data_defaults)
+        data = TwitterUserTweetsData(cls.data_defaults.copy())
         data.api_username = api_username
         data.source_username = source_username
         return cls(db, data)
@@ -187,7 +187,7 @@ class TwitterUserFavourites(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username, source_username):
-        data = TwitterUserFavouritesData(cls.data_defaults)
+        data = TwitterUserFavouritesData(cls.data_defaults.copy())
         data.api_username = api_username
         data.source_username = source_username
         return cls(db, data)
@@ -212,7 +212,7 @@ class TwitterRemoteList(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username, remote_list_id):
-        data = TwitterUserTweetsData(cls.data_defaults)
+        data = TwitterUserTweetsData(cls.data_defaults.copy())
         data.api_username = api_username
         data.remote_list_id = remote_list_id
         return cls(db, data)
@@ -264,7 +264,7 @@ class MessageStream(TsubamePersistentBase):
             # Nothing found, we can create a new stream with this name.
             pass
 
-        data = MessageStreamData(cls.data_defaults)
+        data = MessageStreamData(cls.data_defaults.copy())
         data.name = name
         data.description = description
         return cls(db, data)

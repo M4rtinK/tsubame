@@ -97,7 +97,7 @@ class TwitterUserFilter(Filter):
 
     @classmethod
     def new(cls, db, username):
-        data = TwitterUserFilterData(cls.data_defaults)
+        data = TwitterUserFilterData(cls.data_defaults.copy())
         data.username = username
         return cls(db, data)
 
@@ -129,7 +129,7 @@ class TwitterUserListFilter(Filter):
 
     @classmethod
     def new(cls, db, user_list):
-        data = TwitterUserListFilterData(cls.data_defaults)
+        data = TwitterUserListFilterData(cls.data_defaults.copy())
         if user_list.local:  # local list
             data["local_list_name"] = user_list.name
         else:  # remote list

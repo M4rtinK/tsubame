@@ -223,7 +223,7 @@ class LocalTwitterUserList(UserList):
     def new(cls, db, name, description, users=None):
         if users is None:
             users = []
-        data = LocalTwitterUserListData(cls.data_defaults)
+        data = LocalTwitterUserListData(cls.data_defaults.copy())
         data.name = name
         data.description = description
         # Note that we actually don't pass the functional Twitter user
