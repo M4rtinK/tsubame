@@ -70,14 +70,7 @@ class CustomFileBackend(blitzdb.FileBackend):
         """Custom save() with single instance behavior added."""
         super(CustomFileBackend, self).save(obj, call_hook)
         if single_instance == True:
-            already_loaded_data = self._single_instance_classes.get(obj.pk)
-            if already_loaded_data:
-                log.warning("there is already a single instance loaded for %s" % obj)
-                # TODO: how do we resolve this ? (and can we solve it ?)
-                # It might be a better solution to prevent multiple creation
-                # of single instance document instances.
-            else:
-                self._single_instance_classes[obj.pk] = obj
+            self._single_instance_classes[obj.pk] = obj
 
 
 class DatabaseManager(TsubameBase):
