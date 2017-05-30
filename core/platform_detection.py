@@ -1,43 +1,39 @@
-# modRana current-platform detection
+# Tsubame current platform detection
 import os
 import sys
 
 from core import qrc
+from core.constants import DeviceID
 
-DEFAULT_DEVICE_MODULE_ID = "pc"
-DEFAULT_GUI_MODULE_ID = "GTK"
+DEFAULT_PLATFORM_MODULE_ID = "pc"
+DEFAULT_GUI_MODULE_ID = "qt5"
 
 import logging
 log = logging.getLogger("core.platform_detection")
 
-def getBestDeviceModuleId():
+def get_best_platform_module_id():
     log.info("** detecting current device **")
 
-    result = _check()
+    result = _try_to_detect_platform()
 
     if result is not None:
-        deviceModuleId = result
+        platform_module_id = result
     else:
-        deviceModuleId = DEFAULT_DEVICE_MODULE_ID # use GTK GUI module as fallback
+        platform_module_id = DEFAULT_PLATFORM_MODULE_ID # use Qt5 GUI module as fallback
         log.info("* no known device detected")
 
-    log.info("** selected %s as device module ID **" % deviceModuleId)
-    return deviceModuleId
+    log.info("** selected %s as device module ID **" % platform_module_id)
+    return platform_module_id
 
-
-def getBestGUIModuleId():
-    return DEFAULT_GUI_MODULE_ID
-
-
-def _check():
-    """Try to detect current device."""
+def _try_to_detect_platform():
+    """Try to detect current device/platform."""
 
     # TODO: turn platform IDs to proper constants
 
     # qrc is currently used only on Android, so if we are running with
     # qrc, we are on Android
     if qrc.is_qrc:
-        return "android"
+        return DeviceID.ANDROID
 
     # check CPU architecture
     import subprocess
@@ -46,15 +42,15 @@ def _check():
     arch = str(proc.communicate()[0])
     if ("i686" in arch) or ("x86_64" in arch):
         log.info("* PC detected")
-        return "pc" # we are most probably on a PC
+        return DeviceID.PC # we are most probably on a PC
     if sys.platform == "qnx6":
         log.info("* BlackBerry 10 device detected")
-        return "bb10"
+        return DeviceID.BB10
 
     try:
         import platform
         if platform.node() == "Sailfish":
-            return "jolla"
+            return DeviceID.SAILFISH
     except:
         log.exception("the Python stdlib platform module is apparently unusable on this platform")
 
@@ -65,17 +61,17 @@ def _check():
         f.close()
         if "Nokia RX-51" in cpuinfo: # N900
             log.info("* Nokia N900 detected")
-            return "n900"
+            return DeviceID.N900
         # N9 and N950 share the same device module
         elif "Nokia RM-680" in cpuinfo: # N950
             log.info("* Nokia N950 detected")
-            return "n9"
+            return DeviceID.N9
         elif "Nokia RM-696" in cpuinfo: # N9
             log.info("* Nokia N9 detected")
-            return "n9"
+            return DeviceID.N9
         elif "GTA02" in cpuinfo: # N9
             log.info("* Neo FreeRunner GTA02 detected")
-            return "neo"
+            return DeviceID.NEO
 
     # check lsb_release
     try:
@@ -89,7 +85,7 @@ def _check():
             # TODO: could be also Nemo mobile or other Mer based distro,
             # we should probably discern those two in the future
             log.info("* Jolla (or other Mer based device) detected")
-            return "jolla"
+            return DeviceID.SAILFISH
     except:
         log.exception("running lsb_release during platform detection failed")
 
