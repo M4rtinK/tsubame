@@ -93,7 +93,7 @@ class Tsubame(object):
 
         self._d = {}
 
-        self.dmod = None
+        self.platform = None
 
         # signals
         self.shutdown_signal = Signal()
@@ -187,10 +187,10 @@ class Tsubame(object):
             log.info("** Tsubame startup timing **")
 
             # log device identificator and name
-            if self.dmod:
-                deviceName = self.dmod.getDeviceName()
-                deviceString = self.dmod.getDeviceIDString()
-                log.info("# device: %s (%s)" % (deviceName, deviceString))
+            if self.platform:
+                device_name = self.platform.device_name
+                device_string = self.platform.platform_id
+                log.info("# device: %s (%s)" % (device_name, device_string))
 
             tl = self.timing
             startupTime = tl[0][1] * 1000

@@ -127,7 +127,7 @@ def get_XDGCache_path():
     """
     return os.path.join(
         os.environ.get("$XDG_CACHE_HOME", os.path.join(get_HOME_path(), ".cache")),
-        getProfileName()
+        get_profile_name()
     )
 
 def get_XDG_profile_path():
@@ -161,7 +161,7 @@ class Paths(object):
         # TODO: actually use this
         # get profile folder path
         # -> first check for device module override
-        # if self.tsubame.dmod.profilePath:
+        # if self.tsubame.dmod.profile_path:
         #     self._profile_folder_path = self.tsubame.dmod.profile_path
         # else:
         #     self._profile_folder_path = self.tsubame.get_profile_path()
@@ -198,8 +198,8 @@ class Paths(object):
     @property
     def log_folder_path(self):
         """return path to the log folder"""
-        if self.tsubame.dmod:
-            path = self.tsubame.dmod.getLogFolderPath()
+        if self.tsubame.platform:
+            path = self.tsubame.dmod.log_folder_path()
             if path is not None: # None means there is no device dependent path
                 return self._assure_path(path)
             else:

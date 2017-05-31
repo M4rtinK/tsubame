@@ -16,3 +16,8 @@ class DeviceID(Enum):
     BB10 = "bb10"
     N9 = "n9"
     NEO = "neo"
+
+class InternetConnectivityStatus(Enum):
+    ONLINE = True
+    OFFLINE = False
+    UNKNOWN = None
