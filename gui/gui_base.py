@@ -20,10 +20,23 @@
 from core import constants
 from core.base import TsubameBase
 
+import blitzdb
+
+class OptionsData(blitzdb.Document):
+    pass
+
 class GUI(TsubameBase):
     def __init__(self, tsubame):
         super(GUI, self).__init__()
         self.tsubame = tsubame
+
+        # persistent options dictionary goes here
+        self._options = self._load_options()
+        # Unlike in modRana the persistent dict should
+        # just hold some GUI specific stuff in Tsubame
+        # with backend persistence being handled via
+        # persistent classes.
+
 
     @property
     def gui_toolkit(self):
@@ -192,7 +205,7 @@ class GUI(TsubameBase):
         return any(
             (self.tsubame.platform.start_in_fullscreen,
                self.tsubame.args.fullscreen,
-               self.tsubame.options.get("start_in_fullscreen", False))
+               self.get("start_in_fullscreen", False))
         )
 
     @property
@@ -204,4 +217,24 @@ class GUI(TsubameBase):
         :returns: if GUI should show quit button or not
         :rtype: bool
         """
-        return any((self.tsubame.platform.needs_quit_button, self.tsubame.options.get("showQuitButton", False)))
+        return any((self.tsubame.platform.needs_quit_button, self.get("showQuitButton", False)))
+
+    def _load_options(self):
+        db = self.tsubame.db.main
+        try:
+           options = db.get(OptionsData, {})
+        except blitzdb.Document.DoesNotExist:
+            options = OptionsData()
+            options.backend = db
+        return options
+
+    def _save_options(self):
+        self._options.save()
+        self._options.backend.commit()
+
+    def get(self, key, default_value):
+        return self._options.get(key, default_value)
+
+    def set(self, key, value):
+        self._options[key] = value
+        self._save_options()
