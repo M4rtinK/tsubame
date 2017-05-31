@@ -3,7 +3,7 @@ import os
 import sys
 
 from core import qrc
-from core.constants import DeviceID
+from core.constants import PlatformID
 
 DEFAULT_PLATFORM_MODULE_ID = "pc"
 DEFAULT_GUI_MODULE_ID = "qt5"
@@ -33,7 +33,7 @@ def _try_to_detect_platform():
     # qrc is currently used only on Android, so if we are running with
     # qrc, we are on Android
     if qrc.is_qrc:
-        return DeviceID.ANDROID
+        return PlatformID.ANDROID
 
     # check CPU architecture
     import subprocess
@@ -42,15 +42,15 @@ def _try_to_detect_platform():
     arch = str(proc.communicate()[0])
     if ("i686" in arch) or ("x86_64" in arch):
         log.info("* PC detected")
-        return DeviceID.PC # we are most probably on a PC
+        return PlatformID.PC # we are most probably on a PC
     if sys.platform == "qnx6":
         log.info("* BlackBerry 10 device detected")
-        return DeviceID.BB10
+        return PlatformID.BB10
 
     try:
         import platform
         if platform.node() == "Sailfish":
-            return DeviceID.SAILFISH
+            return PlatformID.SAILFISH
     except:
         log.exception("the Python stdlib platform module is apparently unusable on this platform")
 
@@ -61,17 +61,17 @@ def _try_to_detect_platform():
         f.close()
         if "Nokia RX-51" in cpuinfo: # N900
             log.info("* Nokia N900 detected")
-            return DeviceID.N900
+            return PlatformID.N900
         # N9 and N950 share the same device module
         elif "Nokia RM-680" in cpuinfo: # N950
             log.info("* Nokia N950 detected")
-            return DeviceID.N9
+            return PlatformID.N9
         elif "Nokia RM-696" in cpuinfo: # N9
             log.info("* Nokia N9 detected")
-            return DeviceID.N9
+            return PlatformID.N9
         elif "GTA02" in cpuinfo: # N9
             log.info("* Neo FreeRunner GTA02 detected")
-            return DeviceID.NEO
+            return PlatformID.NEO
 
     # check lsb_release
     try:
@@ -85,7 +85,7 @@ def _try_to_detect_platform():
             # TODO: could be also Nemo mobile or other Mer based distro,
             # we should probably discern those two in the future
             log.info("* Jolla (or other Mer based device) detected")
-            return DeviceID.SAILFISH
+            return PlatformID.SAILFISH
     except:
         log.exception("running lsb_release during platform detection failed")
 

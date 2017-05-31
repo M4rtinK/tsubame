@@ -72,6 +72,8 @@ from core import threads
 from core import singleton
 from core import account
 from core import api
+from core import platform_detection
+from core import constants
 
 # record that imports-done timestamp
 imports_done_timestamp = time.time()
@@ -89,10 +91,6 @@ class Tsubame(object):
         self.add_custom_time("Tsubame start", start_timestamp)
         self.add_custom_time("imports done", imports_done_timestamp)
 
-        self._platform_module = None
-
-        self._d = {}
-
         self.platform = None
 
         # signals
@@ -104,10 +102,34 @@ class Tsubame(object):
         # paths
         self.paths = paths.Paths(tsubame=self)
 
+
         # add the startup handling core module
         self.startup = startup.Startup(self)
         self.db = db.DatabaseManager(profile_path=self.paths.profile_path)
         self.args = self.startup.args
+
+        # load the platform module
+        platform_id = self.args.platform_id
+        if platform_id is None:  # not set via CLI
+            platform_id = platform_detection.get_best_platform_module_id()
+
+        # We have just 3 platform modules in Tsubame at the moment so
+        # might as well do the platform module loading statically for now.
+        if platform_id == constants.PlatformID.PC:
+            from platform import platform_pc as platform_module
+        elif platform_id == constants.PlatformID.SAILFISH:
+            from platform import platform_sailfish as platform_module
+        elif platform_id == constants.PlatformID.ANDROID:
+            from platform import platform_android as platform_module
+        else:
+            # we don't have a platform module for this platform id,
+            # so log that and fall back to the PC platform module
+            log.error("unknown platform id: %s", platform_id)
+            log.error("falling back to using the PC platform module")
+            from platform import platform_pc as platform_module
+
+        # instantiate the platform modules
+        self.platform = platform_module.get_module()
 
         # load accounts
         account.load_accounts(main_db=self.db.main)
@@ -206,12 +228,6 @@ class Tsubame(object):
             log.info("** whole startup: %1.0f ms **" % totalTime)
         else:
             log.info("* timing list empty *")
-
-
-
-
-
-
 
 if __name__ == "__main__":
     Tsubame()

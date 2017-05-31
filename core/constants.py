@@ -8,7 +8,7 @@ DEVICE_TYPE_TABLET = 3
 # device ids
 
 
-class DeviceID(Enum):
+class PlatformID(Enum):
     PC = "pc"
     SAILFISH = "sailfish"
     ANDROID = "android"

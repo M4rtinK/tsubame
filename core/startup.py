@@ -67,9 +67,10 @@ class Startup(object):
                                                  EXAMPLE: account --help" % current_subcommands)
         # device
         parser.add_argument(
-            '-d', metavar="device ID", type=str,
-            help="specify device type",
+            '-p', "--platform", metavar="platform ID", type=str,
+            help="specify platform to run on",
             default=None, action="store",
+            dest="platform_id",
             choices=self.tsubame.available_platform_modules_by_id
         )
 
