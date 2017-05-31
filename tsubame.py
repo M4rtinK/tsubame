@@ -22,8 +22,13 @@
 import sys
 import time
 import os
+import subprocess
 
 start_timestamp = time.time()
+
+tsubame = None
+platform = None
+gui = None
 
 PLATFORM_MODULES_FOLDER = "platform"
 
@@ -83,6 +88,8 @@ class Tsubame(object):
     This is THE main Tsubame class.
     """
 
+    qt5_gui_running = False
+
     def __init__(self):
         singleton.tsubame = self
 
@@ -92,9 +99,11 @@ class Tsubame(object):
         self.add_custom_time("imports done", imports_done_timestamp)
 
         self.platform = None
+        self.platform = gui
 
         # signals
         self.shutdown_signal = Signal()
+        self.notification_triggered = Signal()
 
         # initialize threading
         threads.init_threading()
@@ -128,7 +137,7 @@ class Tsubame(object):
             log.error("falling back to using the PC platform module")
             from platform import platform_pc as platform_module
 
-        # instantiate the platform modules
+        # instantiate the platform module
         self.platform = platform_module.get_module()
 
         # load accounts
@@ -146,9 +155,15 @@ class Tsubame(object):
         # handle tasks requested from the CLI
         self.startup.handle_CLI_tasks()
 
-        # start timing Tsubame launch
-        self.add_time("GUI creation")
-
+        # If we got as far as this we either need to start the GUI
+        # or we are done as the GUI is already running.
+        if not self.qt5_gui_running:
+            self._start_qt5_gui()
+        else:
+            # The QML part of the Qt 5 GUI is already running,
+            # so just instantiate the GUI module so that QML can use it.
+            from gui.qt5.qt5_gui import Qt5GUI
+            self.gui = Qt5GUI(tsubame=self)
 
     def _get_module_names_from_folder(self, folder, prefix='platform_'):
         """List a given folder and find all possible module names.
@@ -181,6 +196,30 @@ class Tsubame(object):
         # * like this, two module names will not be returned if there are
         # both py and pyc files
         return set(moduleNames)
+
+    def _start_qt5_gui(self):
+        """Start the Qt 5 GUI.
+        
+        This is actually a bit crazy as we basically start main.qml in qmlscene
+        and then exit - qmlscene then initializes the QtQuick 2 GUI, which
+        then instantiates the Tsubame class *again*, just without it
+        starting qmlscene again. 
+        
+        The qt5_gui_running class attribute is used during this to protect against
+        an infinite loop.
+                
+        TODO: CLI argument passing ? Well, once we have some relevant arguments I guess. ;-)
+        """
+
+        qml_main = "gui/qt5/qml/main.qml"
+        # path to the component set
+        universal_components = "gui/qt5/qml/universal_components/controls"
+
+        # export QML_IMPORT_DIR = /
+
+        command = "qmlscene %s -I %s" % (qml_main, universal_components)
+
+        subprocess.call(command, shell=True)
 
     @property
     def available_platform_modules_by_id(self):
@@ -228,6 +267,38 @@ class Tsubame(object):
             log.info("** whole startup: %1.0f ms **" % totalTime)
         else:
             log.info("* timing list empty *")
+
+    def shutdown(self):
+        """Cleanly shutdown everything."""
+        log.warning("Shutdown not yet implemented - oops! ^_~")
+
+
+def start(argv=None):
+    """This function is used when starting Tsubame with PyOtherSide.
+    When Tsubame is started from PyOtherSide there is no sys.argv,
+    so QML needs to pass it from its side.
+
+    :param list argv: arguments the program got on cli or arguments
+                      injected by QML
+    """
+    if not argv: argv = []
+    # only assign fake values to argv if argv is empty or missing,
+    # so that real command line arguments are not overwritten
+    if not hasattr(sys, "argv") or not isinstance(sys.argv, list) or not sys.argv:
+        log.debug("argv from QML:\n%s", argv)
+        sys.argv = ["tsubame.py"]
+    # only log full argv if it was extended
+    if argv:
+        sys.argv.extend(argv)
+        log.debug("full argv:\n%s", sys.argv)
+
+    Tsubame.qt5_gui_running = True
+    global tsubame
+    global platform
+    global gui
+    tsubame = Tsubame()
+    platform = tsubame.platform
+    gui = tsubame.gui
 
 if __name__ == "__main__":
     Tsubame()
