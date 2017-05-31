@@ -23,7 +23,7 @@ from platform.base_platform_module import PlatformModule
 import os
 
 # third party apps for Sailfish OS should use the harbour- prefix
-SAILFISH_MODRANA_PROFILE_NAME = "harbour-modrana"
+SAILFISH_MODRANA_PROFILE_NAME = "harbour-tsubame"
 
 def get_module():
     return PlatformSailfishOS()
@@ -35,7 +35,7 @@ class PlatformSailfishOS(PlatformModule):
     def __init__(self):
         super(PlatformSailfishOS, self).__init__()
 
-        # override the default profile name to harbour-modrana
+        # override the default profile name to harbour-tsubame
         #TODO: implement this
         #paths.profile_name = SAILFISH_MODRANA_PROFILE_NAME
 
@@ -78,12 +78,12 @@ class PlatformSailfishOS(PlatformModule):
     # ** PATHS **
 
     # Sailfish OS uses paths based on the XDG standard,
-    # and debug logs go to $HOME/Public/modrana_debug_logs
+    # and debug logs go to $HOME/Public/tsubame_debug_logs
     # so that they are easily accessible to users
 
     @property
     def log_folder_path(self):
-        return os.path.join(paths.get_HOME_path(), "Documents", "modrana_debug_logs")
+        return os.path.join(paths.get_HOME_path(), "Documents", "tsubame_debug_logs")
 
     @property
     def needs_quit_button(self):
