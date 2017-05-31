@@ -104,6 +104,9 @@ class Qt5GUI(GUI):
         """Called by PyOtherSide once the QML side is shutdown.
         """
         self.log.info("Qt 5 GUI module shutting down")
+        # save options, just in case
+        self._save_options()
+        # tell the main class instance
         self.tsubame.shutdown()
 
     @property
@@ -177,13 +180,13 @@ class Qt5GUI(GUI):
         :rtype dict:
         """
         values = {
-            "tsubame_version" : self.tsubame_version(),
+            "tsubame_version" : self.tsubame_version,
             "constants" : self.constants,
             "show_quit_button": self.show_quit_button,
             "fullscreen_only": self.tsubame.platform.fullscreen_only,
             "should_start_in_fullscreen": self.should_start_in_fullscreen,
-            "needs_back_button": self.tsubame.platform.needs_back_button(),
-            "needs_page_background": self.tsubame.platform.needs_page_background(),
+            "needs_back_button": self.tsubame.platform.needs_back_button,
+            "needs_page_background": self.tsubame.platform.needs_page_background,
             "sailfish" : self.tsubame.platform.platform_id == "jolla",
             "highDPI" : self.highDPI,
         }
@@ -196,6 +199,9 @@ class Qt5GUI(GUI):
         :type screen_size: a tuple of integers
         """
         self._screen_size = screen_size
+
+
+
 
 class Search(object):
     """An easy to use search interface for the QML context"""
