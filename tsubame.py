@@ -117,6 +117,9 @@ class Tsubame(object):
         self.db = db.DatabaseManager(profile_path=self.paths.profile_path)
         self.args = self.startup.args
 
+        # handle tasks requested from the CLI
+        self.startup.handle_CLI_tasks()
+
         # load the platform module
         platform_id = self.args.platform_id
         if platform_id is None:  # not set via CLI
@@ -151,9 +154,6 @@ class Tsubame(object):
         api.initialize_api_manager(account_manager=account.account_manager,
                                    twitter_key=twitter_key,
                                    twitter_secret=twitter_secret)
-
-        # handle tasks requested from the CLI
-        self.startup.handle_CLI_tasks()
 
         # If we got as far as this we either need to start the GUI
         # or we are done as the GUI is already running.
