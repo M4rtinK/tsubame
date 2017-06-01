@@ -107,3 +107,8 @@ class PlatformSailfishOS(PlatformModule):
     def connectivity_status(self):
         # TODO: actual connectivity tracking :)
         return True
+
+    @property
+    def universal_components_backend(self):
+        """We use the Silica UC backend on Sailfish OS."""
+        return "silica"

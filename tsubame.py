@@ -213,11 +213,13 @@ class Tsubame(object):
 
         qml_main = "gui/qt5/qml/main.qml"
         # path to the component set
-        universal_components = "gui/qt5/qml/universal_components/controls"
+        universal_components_path = "gui/qt5/qml/universal_components/%s" % self.platform.universal_components_backend
 
         # export QML_IMPORT_DIR = /
 
-        command = "qmlscene %s -I %s" % (qml_main, universal_components)
+        command = "%s %s -I %s" % (self.platform.qmlscene_command,
+                                   qml_main,
+                                   universal_components_path)
 
         subprocess.call(command, shell=True)
 

@@ -223,3 +223,23 @@ class PlatformModule(object):
         By default, the device type is unknown.
         """
         return None
+
+    @property
+    def qmlscene_command(self):
+        """What should be called to start the qmlscene.
+        
+        :returns: command to run to start qmlscene
+        :rtype: str
+        """
+        return "qmlscene"
+
+    @property
+    def universal_components_backend(self):
+        """Path to a Universal Components backend suitable for the given platform.
+       
+        We default to the Controls UC backend.
+         
+        :returns: path to suitable UC backend
+        :rtype: str
+        """
+        return "controls"
