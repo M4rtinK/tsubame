@@ -169,6 +169,8 @@ class Startup(object):
                     print(single_account)
             elif self.args.account_subcommand == "remove":
                 account_manager.remove(account_username=self.args.twitter_account_id)
+            # and we should be done by now
+            exit(0)
 
 
 
