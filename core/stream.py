@@ -24,13 +24,16 @@ import blitzdb
 
 from core.signal import Signal
 from core.base import TsubamePersistentBase, TsubameBase
-from core import api
+from core import api as api_module
 from core import group
+from core import account as account_module
 
 from enum import Enum
+from threading import RLock
 
 class SourceTypes(Enum):
     TWITTER_TIMELINE = "source-twitter-timeline"
+    TWITTER_MENTIONS = "source-twitter-mentions"
     TWITTER_FAVOURITES = "source-twitter-favourites"
     TWITTER_USER_TWEETS = "source-twitter-user-tweets"
     TWITTER_USER_FAVOURITES = "source-twitter-user-favourites"
@@ -92,7 +95,7 @@ class TwitterMessageSource(MessageSource):
 
     def __init__(self, db, data):
         super(TwitterMessageSource, self).__init__(db, data)
-        self._api = api.api_manager.get_twiter_api(account_username=self.data.api_username)
+        self._api = api_module.api_manager.get_twiter_api(account_username=self.data.api_username)
 
     @property
     def api(self):
@@ -116,7 +119,7 @@ class OwnTwitterTimelineData(blitzdb.Document):
 
 
 class OwnTwitterTimeline(TwitterMessageSource):
-    """Own twitter timeline."""
+    """Own Twitter timeline."""
     source_type = SourceTypes.TWITTER_TIMELINE
 
     @classmethod
@@ -129,6 +132,26 @@ class OwnTwitterTimeline(TwitterMessageSource):
         # Either just get messages from the timeline or get new messages
         # since the timeline was last refreshed.
         return self.api.GetHomeTimeline(since_id=self.latest_message_id)
+
+
+class OwnTwitterMentionsData(blitzdb.Document):
+    pass
+
+
+class OwnTwitterMentions(TwitterMessageSource):
+    """Own Twitter mentions."""
+    source_type = SourceTypes.TWITTER_TIMELINE
+
+    @classmethod
+    def new(cls, db, api_username):
+        data = OwnTwitterMentionsData(cls.data_defaults.copy())
+        data.api_username = api_username
+        return cls(db, data)
+
+    def _do_refresh(self):
+        # Either just get messages from the timeline or get new messages
+        # since the timeline was last refreshed.
+        return self.api.GetMentions(since_id=self.latest_message_id)
 
 
 class OwnTwitterFavouritesData(blitzdb.Document):
@@ -282,6 +305,7 @@ class MessageStream(TsubamePersistentBase):
         self._filter_group = None
         self.refresh_done = Signal()
 
+    @property
     def inputs(self):
         if self._inputs is None:
             self._inputs = []
@@ -332,10 +356,88 @@ class MessageStream(TsubamePersistentBase):
         return new_messages
 
 
+class StreamManagerData(blitzdb.Document):
+    pass
+
+
+class StreamManager(TsubamePersistentBase):
+    data_defaults = {
+        "stream_list" : []
+    }
+
+    @classmethod
+    def get_from_db(cls, db):
+        # There should always be only one instance of this class
+        # and its data class so we can as well
+        # create the initial instance here.
+        try:
+            data = db.get(StreamManagerData, {})
+        except blitzdb.Document.DoesNotExist:
+            data = StreamManagerData()
+        return cls(db, data)
+
+    def __init__(self, db, data):
+        super(StreamManager, self).__init__(db, data)
+        self._lock = RLock()
+        self._stream_list = None
+
+    @property
+    def stream_list(self):
+        with self._lock:
+            if self._stream_list is None:  # not yet initialized
+                self._stream_list = []
+                if self.data.stream_list:
+                    for stream_data in self.data.stream_list:
+                        self._stream_list.append(MessageStream(self.db, stream_data))
+            return self._stream_list
+
+    def append_stream(self, stream):
+        with self._lock:
+            self._stream_list.append(stream)
+            self.data.stream_list.append(stream.data)
+
+    def add_initial_streams(self):
+        """Add some initial "default" streams.
+        
+        Generally used to pre-fill the stream list on first application run.
+        """
+        with self._lock:
+            if account_module.account_manager.twitter_accounts:
+                self.log.info("adding initial Twitter account streams streams.")
+            else:
+                self.log.info("not adding initial Twitter account streams streams"
+                              " - no Twitter accounts have been added to Tsubame")
+
+            for account in account_module.account_manager.twitter_accounts:
+                self.log.info("adding initial streams for account: %s", account)
+                # add the timeline stream
+                timeline_name = "%s timeline" % account.username
+                timeline_description = "Twitter timeline stream for %s." % account.username
+                timeline = MessageStream.new(db=self.db,
+                                             name=timeline_name,
+                                             description=timeline_description)
+                timeline_source = OwnTwitterTimeline.new(db=self.db,
+                                                         api_username=account.username)
+                timeline.inputs.append(timeline_source)
+                self.append_stream(timeline)
+
+                # add the mentions stream
+                mentions_name = "%s mentions" % account.username
+                mentions_description = "Twitter mentions stream for %s." % account.username
+                mentions = MessageStream.new(db=self.db,
+                                             name=mentions_name,
+                                             description=mentions_description)
+                mentions_source = OwnTwitterMentions.new(db=self.db,
+                                                         api_username=account.username)
+                mentions.inputs.append(mentions_source)
+                self.append_stream(mentions)
+
+
 # mapping of data classes to functional classes
 CLASS_MAP = {
     OwnTwitterTimelineData : OwnTwitterTimeline,
     OwnTwitterFavouritesData : OwnTwitterFavourites,
+    OwnTwitterMentionsData : OwnTwitterMentions,
     TwitterUserTweetsData : TwitterUserTweets,
     TwitterUserFavouritesData : TwitterUserFavourites,
     TwitterRemoteListData : TwitterRemoteList,
