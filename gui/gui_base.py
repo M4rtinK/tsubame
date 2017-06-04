@@ -120,23 +120,6 @@ class GUI(TsubameBase):
                     "height" : (80, 120)[i]
                 }
             },
-
-            "map": {
-                "button": {
-                    "size": (72, 108)[i],
-                    "margin": (16, 24)[i],
-                    "spacing": (16, 24)[i],
-                },
-                "scaleBar" : {
-                    "border" : (2, 3)[i],
-                    "height" : (4, 6)[i],
-                    "fontSize" : (24, 36)[i],
-                },
-                "tracklogTrace" : {
-                    "width" : (10, 15)[i],
-                    "color" : "blue",
-                },
-            },
             "listView" : {
                 "spacing" : (8, 24)[i],
                 "cornerRadius" : (8, 12)[i],
@@ -144,6 +127,9 @@ class GUI(TsubameBase):
             }
         }
         return style
+
+
+
 
     @property
     def constants(self):
