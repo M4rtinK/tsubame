@@ -27,6 +27,8 @@ log = logging.getLogger("core.paths")
 DEFAULT_PROFILE_FOLDER_NAME = "tsubame"
 CACHE_FOLDER_NAME = "cache"
 DEBUG_LOGS_FOLDER_NAME = "debug_logs"
+DATA_FOLDER_NAME = "data"
+THEME_FOLDER_NAME = "theme"
 # file names
 OPTIONS_FILENAME = "options.json"
 VERSION_INFO_FILENAME = "version.txt"
@@ -208,9 +210,9 @@ class Paths(object):
             return self._assure_path_folder(self.profile_path, DEBUG_LOGS_FOLDER_NAME)
 
     @property
-    def accounts_folder_path(self):
-        """Return path to folder used to store account info."""
-        return self._assure_path(os.path.join(self.profile_path, ACCOUNTS_FOLDER))
+    def theme_folder_path(self):
+        """Return path to folder used to store icons."""
+        return self._assure_path(os.path.join(DATA_FOLDER_NAME, THEME_FOLDER_NAME))
 
     @property
     def version_string(self):
