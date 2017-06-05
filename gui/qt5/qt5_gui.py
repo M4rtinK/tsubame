@@ -189,6 +189,7 @@ class Qt5GUI(GUI):
             "needs_page_background": self.tsubame.platform.needs_page_background,
             "sailfish" : self.tsubame.platform.platform_id == "jolla",
             "highDPI" : self.highDPI,
+            "theme" : self.theme
         }
         return values
 

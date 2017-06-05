@@ -19,6 +19,7 @@
 #---------------------------------------------------------------------------
 from core import constants
 from core.base import TsubameBase
+from gui.theme import THEMES, THEME_DEFAULT
 
 import blitzdb
 
@@ -128,8 +129,12 @@ class GUI(TsubameBase):
         }
         return style
 
-
-
+    @property
+    def theme(self):
+        uc_backend = self.tsubame.platform.universal_components_backend
+        # Return theme corresponding to currently used UC backend.
+        # Default to the Controls theme if backend is unknown.
+        return THEMES.get(uc_backend, THEME_DEFAULT)
 
     @property
     def constants(self):

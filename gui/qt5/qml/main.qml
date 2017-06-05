@@ -337,11 +337,6 @@ ApplicationWindow {
         // add Python event handlers
         // - they will be called during Tsubame startup
         // - like this initial property values will be set
-        python.setHandler("themeChanged", function(newTheme){
-            rWin.log.info("theme changed to: " + newTheme.name + " (id: " + newTheme.id + ")")
-            rWin.theme = newTheme
-        })
-
         python.setHandler("pythonNotify", function(pythonNotify) {
             rWin.notify(pythonNotify.message, pythonNotify.timeout)
         })
@@ -399,6 +394,13 @@ ApplicationWindow {
 
         // set normal/hiDPI mode
         rWin.hiDPI = values.highDPI
+
+        // set the theme
+        rWin.log.debug("THEME")
+        rWin.log.debug(values.theme)
+        rWin.log.debug(values.theme.main_fill)
+        rWin.theme = values.theme
+        rWin.log.debug(rWin.theme.main_fill)
 
         // assign to constants
         rWin.c = values.constants
