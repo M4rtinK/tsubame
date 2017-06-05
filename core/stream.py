@@ -31,6 +31,8 @@ from core import account as account_module
 from enum import Enum
 from threading import RLock
 
+stream_manager = None
+
 class SourceTypes(Enum):
     TWITTER_TIMELINE = "source-twitter-timeline"
     TWITTER_MENTIONS = "source-twitter-mentions"
@@ -95,7 +97,7 @@ class TwitterMessageSource(MessageSource):
 
     def __init__(self, db, data):
         super(TwitterMessageSource, self).__init__(db, data)
-        self._api = api_module.api_manager.get_twiter_api(account_username=self.data.api_username)
+        self._api = api_module.api_manager.get_twitter_api(account_username=self.data.api_username)
 
     @property
     def api(self):
@@ -408,8 +410,10 @@ class StreamManager(TsubamePersistentBase):
                 self.log.info("not adding initial Twitter account streams streams"
                               " - no Twitter accounts have been added to Tsubame")
 
-            for account in account_module.account_manager.twitter_accounts:
+            for account in account_module.account_manager.twitter_accounts.values():
                 self.log.info("adding initial streams for account: %s", account)
+                self.log.debug("ACCOUNTS:")
+                self.log.debug(account_module.account_manager.twitter_accounts)
                 # add the timeline stream
                 timeline_name = "%s timeline" % account.username
                 timeline_description = "Twitter timeline stream for %s." % account.username
@@ -444,3 +448,6 @@ CLASS_MAP = {
     TwitterLocalListData : TwitterLocalList
 }
 
+def initialize_stream_manager(db):
+    global stream_manager
+    stream_manager = StreamManager.get_from_db(db)

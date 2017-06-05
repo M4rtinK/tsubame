@@ -28,6 +28,7 @@ from core import constants
 from core.threads import threadMgr
 from core import utils
 from core import tsubame_log
+from core import stream as stream_module
 from gui.gui_base import GUI
 
 import logging
@@ -93,6 +94,9 @@ class Qt5GUI(GUI):
 
         # make the log manager easily accessible
         self.log_manager = tsubame_log.log_manager
+
+        # stream management
+        self.streams = Streams(self)
 
         # log for log messages from the QML context
         self.qml_log = qml_log
@@ -201,11 +205,34 @@ class Qt5GUI(GUI):
         """
         self._screen_size = screen_size
 
+class Streams(object):
+    """An easy to use interface to message streams for the QML context."""
 
+    def __init__(self, gui):
+        self.gui = gui
+
+    def get_stream_list(self):
+        """Get list of message streams."""
+        stream_list = stream_module.stream_manager.stream_list
+        # Populate the stream list with some initial content if empty.
+        if not stream_list:
+            self.gui.log.info("stream list is empty - adding initial streams")
+            stream_module.stream_manager.add_initial_streams()
+            stream_list = stream_module.stream_manager.stream_list
+
+        stream_dict_list = []
+        for stream in stream_list:
+            # Convert the list of stream objects to a list of dicts
+            # created from the underlying data objects.
+            # That should work for now and we can do something more
+            # sophisticated later. :)
+            stream_dict_list.append(dict(stream.data))
+
+        return stream_dict_list
 
 
 class Search(object):
-    """An easy to use search interface for the QML context"""
+    """An easy to use search interface for the QML context."""
 
     def __init__(self, gui):
         self.gui = gui

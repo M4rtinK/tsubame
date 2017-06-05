@@ -77,6 +77,7 @@ from core import threads
 from core import singleton
 from core import account
 from core import api
+from core import stream
 from core import platform_detection
 from core import constants
 
@@ -154,6 +155,9 @@ class Tsubame(object):
         api.initialize_api_manager(account_manager=account.account_manager,
                                    twitter_key=twitter_key,
                                    twitter_secret=twitter_secret)
+
+        # initialize the Stream manager
+        stream.initialize_stream_manager(self.db.main)
 
         # If we got as far as this we either need to start the GUI
         # or we are done as the GUI is already running.

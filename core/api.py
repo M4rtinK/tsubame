@@ -42,23 +42,23 @@ class ApiManager(TsubameBase):
         # Twitter API instances for different twitter_accounts.
         self._twitter_api_dict = {}
 
-    def get_twitter_api(self, api_username):
+    def get_twitter_api(self, account_username):
         """Get Twitter API access object corresponding to the provided username.
         
         The API access objects are created on demand and cached.
         
-        :param str api_username: unique Twitter username of an account that has been added to Tsubame
+        :param str account_username: unique Twitter username of an account that has been added to Tsubame
         """
-        api = self._twitter_api_dict.get(api_username)
+        api = self._twitter_api_dict.get(account_username)
         if api is None:
-            twitter_account = self._account_manager.twitter_accounts.get(api_username)
+            twitter_account = self._account_manager.twitter_accounts.get(account_username)
             if twitter_account is None:
                 raise TwitterAccountForAPINotFound
             api = twitter.Api(consumer_key=self._twitter_key,
                               consumer_secret=self._twitter_secret,
                               access_token_key=twitter_account.token,
                               access_token_secret=twitter_account.token_secret)
-            self._twitter_api_dict[api_username] = api
+            self._twitter_api_dict[account_username] = api
         return api
 
 
