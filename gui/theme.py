@@ -1,5 +1,6 @@
 # Default theme.
 THEME_DEFAULT = {
+    "id" : "default",
     "color" : {
         "main_fill" : ("#92aaf3"),
         "main_outline" : ("#3c60fa"),
@@ -20,10 +21,12 @@ THEME_DEFAULT = {
 }
 # Theme for use with the Universal Components Controls backend.
 # At the moment the Controls theme is the same as the default theme.
-THEME_CONTROLS = THEME_DEFAULT
+THEME_CONTROLS = THEME_DEFAULT.copy()
+THEME_CONTROLS["id"] = "controls"
 
 # Theme for use with the Universal Components Silica backend.
 THEME_SILICA = {
+    "id" : "silica",
     "color": {
         "main_fill" :  ("transparent"),
         "main_outline" :  ("red"),
