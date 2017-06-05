@@ -157,7 +157,7 @@ class Qt5GUI(GUI):
             # split out the provider id
             provider_id, image_id = image_id.split("/", 1)
             # get the provider and call its get_image()
-            return self._imageProviders[provider_id].getImage(image_id, requestedSize)
+            return self._imageProviders[provider_id].get_image(image_id, requestedSize)
         except ValueError:  # provider id missing or image ID overall wrong
             self.log.error("provider ID missing: %s", original_image_id)
         except AttributeError:  # missing provider (we are calling methods of None ;) )
@@ -302,29 +302,29 @@ class IconImageProvider(ImageProvider):
         #log.debug(image_id)
         try:
             #TODO: theme name caching ?
-            theme_folder = self.gui.modrana.paths.getThemesFolderPath()
-            # full_icon_path = os.path.join(theme_folder, image_id)
+            theme_folder = self.gui.tsubame.paths.theme_folder_path
+            # full_icon_path = os.path.join(icons_folder, image_id)
             # the path is constructed like this in QML
             # so we can safely just split it like this
             split_path = image_id.split("/")
             # remove any Ambiance specific garbage appended by Silica
             split_path[-1] = split_path[-1].rsplit("?")[0]
+            theme_name = split_path[0]
             full_icon_path = os.path.join(theme_folder, *split_path)
 
-            if not utils.internal_isfile(full_icon_path):
-                if split_path[0] == constants.DEFAULT_THEME_ID:
-                    # already on default theme and icon path does not exist
-                    log.error("Icon not found in default theme:")
-                    log.error(full_icon_path)
-                    return None
-                else:  # try to get the icon from default theme
-                    split_path[0] = constants.DEFAULT_THEME_ID
-                    full_icon_path = os.path.join(theme_folder, *split_path)
-                    if not utils.internal_isfile(full_icon_path):
-                        # icon not found even in the default theme
-                        log.error("Icon not found even in default theme:")
-                        log.error(full_icon_path)
-                        return None
+            icon_exists = utils.internal_isfile(full_icon_path)
+            if not icon_exists:
+                # Not found in currently selected theme,
+                # try to check the default theme.
+                split_path[0] = "default"
+                default_icon_path = os.path.join(theme_folder, *split_path)
+                if utils.internal_isfile(default_icon_path):
+                    full_icon_path = default_icon_path
+                    icon_exists = True
+            if not icon_exists:
+                log.error("Icon not found (in both %s theme and default theme):", theme_name)
+                log.error(full_icon_path)
+                return None
             return utils.internal_get_file_contents(full_icon_path), (-1,-1), pyotherside.format_data
         except Exception:
             log.exception("icon image provider: loading icon failed, id:\n%s" % image_id)
