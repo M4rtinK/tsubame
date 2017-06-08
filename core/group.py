@@ -31,7 +31,7 @@ class Group(TsubamePersistentBase):
     Supports atomic operations on the contained group.
     """
 
-    data_defaults = {"items" : []}
+    data_defaults = {"members" : []}
 
     def __init__(self, db, data):
         super(Group, self).__init__(db, data)
@@ -42,19 +42,19 @@ class Group(TsubamePersistentBase):
         with self._group_lock:
             # the items to be added need to be
             # persistent class instances
-            self.data.items.append(item.data)
+            self.data.members.append(item.data)
             self._items.append()
 
     def clear(self):
         with self._group_lock:
-            self.data.items.clear()
+            self.data.members.clear()
             self._items.clear()
 
     def _get_items(self):
         raise NotImplementedError
 
     @property
-    def items(self):
+    def members(self):
         with self._group_lock:
             if self._items is None:
                 self._items = self._get_items()
@@ -62,7 +62,7 @@ class Group(TsubamePersistentBase):
 
     def pop(self, index):
         with self._group_lock:
-            self.data.items.pop(index)
+            self.data.members.pop(index)
             return self._items.pop(index)
 
     # NOTE: The reordering operations need to be always done
@@ -80,9 +80,9 @@ class Group(TsubamePersistentBase):
     def replace_items(self, new_items):
         with self._group_lock:
             self._items.clear()
-            self.data.items.clear()
+            self.data.members.clear()
             self._items = new_items
-            self.data.items = [i.data for i in new_items]
+            self.data.members = [i.data for i in new_items]
 
 class FilterGroupData(blitzdb.Document):
     pass
@@ -96,7 +96,7 @@ class FilterGroup(Group):
 
     def _get_items(self):
         items = []
-        for item_data in self.data.items:
+        for item_data in self.data.members:
             # Fetch the functional filter class based
             # based on data class.
             cls = filter.CLASS_MAP.get(item_data.__class__)
@@ -108,7 +108,7 @@ class FilterGroup(Group):
         return items
 
     def filter_messages(self, messages):
-        for single_filter in self.items:
+        for single_filter in self.members:
             messages = single_filter.filter_messages(messages)
         return list(messages)  # make sure we return a list of messages
 
