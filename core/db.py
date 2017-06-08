@@ -26,6 +26,7 @@ from core.base import TsubameBase
 import blitzdb
 
 MAIN_DB_FOLDER = "main_db"
+TWEET_CACHE_DB_FOLDER = "tweet_cache_db"
 
 log = logging.getLogger("core.db")
 
@@ -75,18 +76,25 @@ class CustomFileBackend(blitzdb.FileBackend):
 
 class DatabaseManager(TsubameBase):
 
-    def __init__(self, profile_path):
+    def __init__(self, paths):
         super(DatabaseManager, self).__init__()
-        self._profile_path = profile_path
+        self.paths = paths
         self._main_db = None
+        self._tweet_cache_db = None
 
     @property
     def main(self):
         if not self._main_db:
-            self._main_db = CustomFileBackend(os.path.join(self._profile_path, MAIN_DB_FOLDER))
+            self._main_db = CustomFileBackend(os.path.join(self.paths.profile_path, MAIN_DB_FOLDER))
+        return  self._main_db
+
+    @property
+    def tweet_cache(self):
+        if not self._tweet_cache_db:
+            self._tweet_cache_db = CustomFileBackend(os.path.join(self.paths.cache_folder_path, TWEET_CACHE_DB_FOLDER))
         return  self._main_db
 
     def commit_all(self):
-        for db in self._main_db:
+        for db in (self._main_db, self._tweet_cache_db):
             if db:
                 db.commit()
