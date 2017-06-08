@@ -19,7 +19,7 @@
 #---------------------------------------------------------------------------
 from core import constants
 from core import paths
-from platform.base_platform_module import PlatformModule
+from core.platform.base_platform_module import PlatformModule
 import os
 
 # third party apps for Sailfish OS should use the harbour- prefix

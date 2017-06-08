@@ -18,7 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------------
 from core import constants
-from platform.base_platform_module import PlatformModule
+from core.platform.base_platform_module import PlatformModule
 
 def get_module():
     return PlatformPC()

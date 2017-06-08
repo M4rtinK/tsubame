@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------------
-from platform.base_platform_module import PlatformModule
+from core.platform.base_platform_module import PlatformModule
 
 MAIN_TSUBAME_DATA_FOLDER = "/sdcard/tsubame"  # main Tsubame data folder on Android
 

@@ -30,7 +30,7 @@ tsubame = None
 platform = None
 gui = None
 
-PLATFORM_MODULES_FOLDER = "platform"
+PLATFORM_MODULES_FOLDER = "core/platform"
 
 # initialize logging
 from core import tsubame_log
@@ -129,11 +129,11 @@ class Tsubame(object):
         # We have just 3 platform modules in Tsubame at the moment so
         # might as well do the platform module loading statically for now.
         if platform_id == constants.PlatformID.PC:
-            from platform import platform_pc as platform_module
+            from core.platform import platform_pc as platform_module
         elif platform_id == constants.PlatformID.SAILFISH:
-            from platform import platform_sailfish as platform_module
+            from core.platform import platform_sailfish as platform_module
         elif platform_id == constants.PlatformID.ANDROID:
-            from platform import platform_android as platform_module
+            from core.platform import platform_android as platform_module
         else:
             # we don't have a platform module for this platform id,
             # so log that and fall back to the PC platform module
