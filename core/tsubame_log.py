@@ -78,8 +78,15 @@ class LogManager(object):
         # as we set the root logger to accept even debug messages,
         # we need to explicitly tell urllib3 to skip debug level
         # messages
-        urllib3_logger = logging.getLogger("urllib3")
-        urllib3_logger.setLevel(logging.ERROR)
+        logging.getLogger("urllib3").setLevel(logging.ERROR)
+        # same thing for BlitzDB
+        logging.getLogger("blitzdb").setLevel(logging.INFO)
+        # same thing for requests_oauthlib
+        logging.getLogger("requests_oauthlib").setLevel(logging.INFO)
+        # same thing for oauthlib itself
+        logging.getLogger("oauthlib").setLevel(logging.INFO)
+        # same thing thing for requests
+        logging.getLogger("requests").setLevel(logging.ERROR)
 
         # create console handler that prints everything to stdout
         # (as was done previously by just using print)
