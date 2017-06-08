@@ -57,7 +57,8 @@ class ApiManager(TsubameBase):
             api = twitter.Api(consumer_key=self._twitter_key,
                               consumer_secret=self._twitter_secret,
                               access_token_key=twitter_account.token,
-                              access_token_secret=twitter_account.token_secret)
+                              access_token_secret=twitter_account.token_secret,
+                              tweet_mode="extended")
             self._twitter_api_dict[account_username] = api
         return api
 
