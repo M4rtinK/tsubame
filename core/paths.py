@@ -120,7 +120,7 @@ def get_XDG_data_path():
         get_profile_name()
     )
 
-def get_XDGCache_path():
+def get_XDG_cache_path():
     """Check the contents of the $XDG_CONFIG_HOME variable and
     default to "$HOME/.local/share" if not set.
 
@@ -188,14 +188,8 @@ class Paths(object):
 
     @property
     def cache_folder_path(self):
-        """return path to a folder used for various cache data"""
-        path = self.tsubame.dmod.cacheFolderPath
-        # if no path was provided by device module, use default,
-        # which is a cache folder in the profile folder
-        if path is None:
-            path = os.path.join(self.profile_path, CACHE_FOLDER_NAME)
-
-        return self._assure_path(path)
+        """Return path to a folder used for caching."""
+        return self._assure_path(get_XDG_cache_path())
 
     @property
     def log_folder_path(self):
