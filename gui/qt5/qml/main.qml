@@ -396,11 +396,7 @@ ApplicationWindow {
         rWin.hiDPI = values.highDPI
 
         // set the theme
-        rWin.log.debug("THEME")
-        rWin.log.debug(values.theme)
-        rWin.log.debug(values.theme.main_fill)
         rWin.theme = values.theme
-        rWin.log.debug(rWin.theme.main_fill)
 
         // assign to constants
         rWin.c = values.constants
