@@ -230,6 +230,26 @@ class Streams(object):
 
         return stream_dict_list
 
+    def get_stream_messages(self, stream_name, refresh=False):
+        """Get a list of messages for stream identified by stream name."""
+        stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+        if stream:
+            if refresh:
+                stream.refresh()
+            message_list = []
+
+            for message in stream.messages:
+                message_dict = {
+                    "text" : message.full_text,
+                    "username" : message.user.screen_name
+                }
+                message_list.append(message_dict)
+
+            return message_list
+        else:
+            self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
+            return []
+
 
 class Search(object):
     """An easy to use search interface for the QML context."""
