@@ -133,6 +133,8 @@ class OwnTwitterTimeline(TwitterMessageSource):
     def _do_refresh(self):
         # Either just get messages from the timeline or get new messages
         # since the timeline was last refreshed.
+        # NOTE: This has a pretty low rate limit - 15 requests per 15 minute window,
+        #       so local persistent caching should be used where possible.
         return self.api.GetHomeTimeline(since_id=self.latest_message_id)
 
 
@@ -197,7 +199,7 @@ class TwitterUserTweets(TwitterMessageSource):
         return self.data.source_username
 
     def _do_refresh(self):
-        return self.api.GetUserTimeline(user_id=self.source_username, since_id=self.latest_message_id)
+        return self.api.GetUserTimeline(screen_name=self.source_username, since_id=self.latest_message_id)
 
 
 class TwitterUserFavouritesData(blitzdb.Document):
@@ -308,6 +310,14 @@ class MessageStream(TsubamePersistentBase):
         self.refresh_done = Signal()
 
     @property
+    def name(self):
+        return self.data.name
+
+    @property
+    def messages(self):
+        return self._messages
+
+    @property
     def inputs(self):
         if self._inputs is None:
             self._inputs = []
@@ -351,7 +361,8 @@ class MessageStream(TsubamePersistentBase):
             new_messages.extend(source.refresh())
         # let's try to sort the messages
         # - this might or might not work as expected :)
-        new_messages.sort()
+        # UPDATE: does not work (at least for Twitter messages) :D
+        #new_messages.sort()
         # filter the new messages
         new_messages = self.filters.filter_messages(new_messages)
         # return the result
@@ -381,22 +392,39 @@ class StreamManager(TsubamePersistentBase):
     def __init__(self, db, data):
         super(StreamManager, self).__init__(db, data)
         self._lock = RLock()
-        self._stream_list = None
+        self._streams_loaded = False
+        self._stream_list = []
+        self._stream_dict = {}
+
+    def _load_streams(self):
+        if self.data.stream_list:
+            for stream_data in self.data.stream_list:
+                stream = MessageStream(self.db, stream_data)
+                self._stream_list.append(stream)
+                self._stream_dict[stream.name] = stream
+        self._streams_loaded = True
 
     @property
     def stream_list(self):
         with self._lock:
-            if self._stream_list is None:  # not yet initialized
-                self._stream_list = []
-                if self.data.stream_list:
-                    for stream_data in self.data.stream_list:
-                        self._stream_list.append(MessageStream(self.db, stream_data))
+            if not self._streams_loaded:  # not yet loaded
+                self._load_streams()
             return self._stream_list
+
+    @property
+    def stream_dict(self):
+        with self._lock:
+            if not self._streams_loaded:  # not yet loaded
+                self._load_streams()
+            return self._stream_dict
 
     def append_stream(self, stream):
         with self._lock:
+            if not self._streams_loaded:  # not yet loaded
+                self._load_streams()
             self._stream_list.append(stream)
             self.data.stream_list.append(stream.data)
+            self.stream_dict[stream.name] = stream
 
     def add_initial_streams(self):
         """Add some initial "default" streams.
@@ -412,16 +440,19 @@ class StreamManager(TsubamePersistentBase):
 
             for account in account_module.account_manager.twitter_accounts.values():
                 self.log.info("adding initial streams for account: %s", account)
-                self.log.debug("ACCOUNTS:")
-                self.log.debug(account_module.account_manager.twitter_accounts)
                 # add the timeline stream
                 timeline_name = "%s timeline" % account.username
                 timeline_description = "Twitter timeline stream for %s." % account.username
                 timeline = MessageStream.new(db=self.db,
                                              name=timeline_name,
                                              description=timeline_description)
-                timeline_source = OwnTwitterTimeline.new(db=self.db,
-                                                         api_username=account.username)
+                # Actually use get-user-tweets instead of get-own-timeline
+                # as get-own-timeline has a very low rate limit (15 requests per 15 minutes),
+                # which makes it pretty useless for use during debugging without tweet caching.
+                timeline_source = TwitterUserTweets.new(db=self.db,
+                                                        api_username=account.username,
+                                                        source_username=account.username)
+
                 timeline.inputs.append(timeline_source)
                 self.append_stream(timeline)
 
