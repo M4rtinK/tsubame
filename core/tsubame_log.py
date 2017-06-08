@@ -92,15 +92,15 @@ class LogManager(object):
         # file viewers should be able to handle longer lines
         self._console_handler.setFormatter(console_formatter)
 
-        # also, the file log can't be created and opened at once as modRana needs to load
+        # also, the file log can't be created and opened at once as Tsubame needs to load
         # and consult the persistent settings database first, but we don't want to loose
         # any early log messages
         # * solution -> MemoryLogHandler stores the log messages and is either flushed to the
-        #   log file or discarded when modRana discovers that logging to file is disabled
+        #   log file or discarded when Tsubame discovers that logging to file is disabled
         self._memory_handler = logging.handlers.MemoryHandler(capacity = 1024*10)
         self._memory_handler.setLevel(logging.DEBUG)
 
-        # now we attach the console and memory handlers to the root modRana logger
+        # now we attach the console and memory handlers to the root Tsubame logger
         # * like this all messages should arrive in the handlers
         self._root_tsubame_logger.addHandler(self._console_handler)
         self._root_tsubame_logger.addHandler(self._memory_handler)
@@ -136,8 +136,8 @@ class LogManager(object):
 
     def clear_early_log(self):
         """Tsubame stores early log messages in a MemoryHandler to have a complete log file
-        in case logging to file is enabled later in modRana startup.
-        But if modRana discovers after consulting the persistent options database that
+        in case logging to file is enabled later in Tsubame startup.
+        But if Tsubame discovers after consulting the persistent options database that
         logging to should not be enabled, we need to remove the MemoryHandler & clear it's contents.
         """
         if self._memory_handler:
@@ -252,7 +252,7 @@ class LogManager(object):
     def disable_stdout_log(self):
         """Disable output to stdout from to console log handler
 
-        This is mainly used in the CLI mode to not pollute stdout with modRana log messages.
+        This is mainly used in the CLI mode to not pollute stdout with Tsubame log messages.
         """
         self._console_handler.addFilter(self._filterAll)
         self._stdoutLoggingDisabled = True
