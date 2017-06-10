@@ -7,6 +7,7 @@ import "tsubame_components"
 BasePage {
     id : streamPage
     property string streamName : ""
+    property bool fetching_messages : false
     headerText : streamName
     content : ContentColumn {
         ListView {
@@ -47,7 +48,7 @@ BasePage {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
-        text : "<h2>No messages available.</h2>"
+        text : fetching_messages ? qsTr("<h2>No messages available.</h2>") : qsTr("<h2>Fetching messages.</h2>")
         visible : streamLW.model.count == 0
     }
 
@@ -60,6 +61,7 @@ BasePage {
         rWin.log.info("loading messages for " + streamName)
         rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, true], function(message_list){
             streamLW.model.clear()
+            fetching_messages = true
             for (var i=0; i<message_list.length; i++) {
                 var message = message_list[i]
                 streamLW.model.append({"messageUsername" : message.user.screen_name,
