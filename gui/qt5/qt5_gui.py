@@ -23,6 +23,7 @@ import re
 import pyotherside
 
 import threading
+import twitter
 
 from core import constants
 from core.threads import threadMgr
@@ -239,11 +240,12 @@ class Streams(object):
             message_list = []
 
             for message in stream.messages:
-                message_dict = {
-                    "text" : message.full_text,
-                    "username" : message.user.screen_name
-                }
-                message_list.append(message_dict)
+                if isinstance(message, twitter.Status):
+                    message_dict = message.AsDict()
+                    message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
+                    message_list.append(message_dict)
+                else:
+                    self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
 
             return message_list
         else:

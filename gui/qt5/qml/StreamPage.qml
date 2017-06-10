@@ -62,8 +62,8 @@ BasePage {
             streamLW.model.clear()
             for (var i=0; i<message_list.length; i++) {
                 var message = message_list[i]
-                streamLW.model.append({"messageUsername" : message.username,
-                                       "messageText" : message.text})
+                streamLW.model.append({"messageUsername" : message.user.screen_name,
+                                       "messageText" : message.full_text})
             }
         })
     }

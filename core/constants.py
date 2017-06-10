@@ -21,3 +21,6 @@ class InternetConnectivityStatus(Enum):
     ONLINE = True
     OFFLINE = False
     UNKNOWN = None
+
+class MessageType(Enum):
+    TWEET = "tweet"
