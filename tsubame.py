@@ -115,7 +115,9 @@ class Tsubame(object):
 
         # add the startup handling core module
         self.startup = startup.Startup(self)
-        self.db = db.DatabaseManager(self.paths)
+        # initialize the database manager
+        db.initialize_database_manager(self.paths)
+        self.db = db.db_manager
         self.args = self.startup.args
 
         # handle tasks requested from the CLI
