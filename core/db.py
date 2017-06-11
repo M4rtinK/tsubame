@@ -30,6 +30,8 @@ TWEET_CACHE_DB_FOLDER = "tweet_cache_db"
 
 log = logging.getLogger("core.db")
 
+db_manager = None
+
 class CustomFileBackend(blitzdb.FileBackend):
     """Custom file backend subclass with single instance behavior added."""
 
@@ -98,3 +100,7 @@ class DatabaseManager(TsubameBase):
         for db in (self._main_db, self._tweet_cache_db):
             if db:
                 db.commit()
+
+def initialize_database_manager(paths):
+    global db_manager
+    db_manager = DatabaseManager(paths)
