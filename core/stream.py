@@ -358,9 +358,9 @@ class MessageStream(TsubamePersistentBase):
         self._filter_group = None
 
         if self.data.input_group:
-            self._input_group = group.InputGroup(self.db, self.data.input_group)
+            self._input_group = InputGroup(self.db, self.data.input_group)
         else:  # create a new input group
-            self._input_group = group.InputGroup.new(self.db)
+            self._input_group = InputGroup.new(self.db)
             self.data.input_group = self._input_group.data
 
         if self.data.filter_group:
@@ -532,6 +532,53 @@ class StreamManager(TsubamePersistentBase):
                 mentions.save(commit=True)
                 # save own state
                 self.save(commit=True)
+
+
+class InputGroupData(blitzdb.Document):
+    pass
+
+
+class InputGroup(group.Group):
+
+    data_defaults = copy.deepcopy(group.Group.data_defaults)
+
+    @classmethod
+    def new(cls, db):
+        data = InputGroupData(copy.deepcopy(cls.data_defaults))
+        return cls(db, data)
+
+    def __init__(self, db, data):
+        super(InputGroup, self).__init__(db, data)
+        with self._group_lock:
+            self._load_members()
+
+    def _load_members(self):
+        for item_data in self.data.members:
+            # Fetch the functional input class based
+            # based on data class.
+            cls = CLASS_MAP.get(item_data.__class__)
+            if cls is None:
+                self.log.error("Source class class not found for data: %s", item_data)
+            else:
+                self._members.append(cls(self.db, item_data))
+
+    @property
+    def messages(self):
+        """Get a combined list of all messages from the sources.
+        
+        TODO: time/message id based sorting ?
+        """
+        message_list = []
+        for member in self.members:
+            message_list.extend(member.messages)
+        return message_list
+
+    def refresh(self):
+        """Refresh all sources and return list of all new messages."""
+        new_messages = []
+        for source in self.members:
+            new_messages.extend(source.refresh())
+        return new_messages
 
 
 # mapping of data classes to functional classes

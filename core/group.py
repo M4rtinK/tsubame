@@ -26,7 +26,6 @@ from threading import RLock
 
 from core.base import TsubamePersistentBase
 from core import filter
-from core import stream
 
 class Group(TsubamePersistentBase):
     """And ordered serializable group of items.
@@ -122,52 +121,3 @@ class FilterGroup(Group):
         for single_filter in self.members:
             messages = single_filter.filter_messages(messages)
         return list(messages)  # make sure we return a list of messages
-
-
-class InputGroupData(blitzdb.Document):
-    pass
-
-
-class InputGroup(Group):
-
-    data_defaults = copy.deepcopy(Group.data_defaults)
-
-    @classmethod
-    def new(cls, db):
-        data = InputGroupData(copy.deepcopy(cls.data_defaults))
-        return cls(db, data)
-
-    def __init__(self, db, data):
-        super(InputGroup, self).__init__(db, data)
-        with self._group_lock:
-            self._load_members()
-
-    def _load_members(self):
-        for item_data in self.data.members:
-            # Fetch the functional input class based
-            # based on data class.
-            cls = stream.CLASS_MAP.get(item_data.__class__)
-            if cls is None:
-                self.log.error("Source class class not found for data: %s", item_data)
-            else:
-                self._members.append(cls(self.db, item_data))
-
-    @property
-    def messages(self):
-        """Get a combined list of all messages from the sources.
-        
-        TODO: time/message id based sorting ?
-        """
-        message_list = []
-        for member in self.members:
-            message_list.extend(member.messages)
-        return message_list
-
-    def refresh(self):
-        """Refresh all sources and return list of all new messages."""
-        new_messages = []
-        for source in self.members:
-            new_messages.extend(source.refresh())
-        return new_messages
-
-
