@@ -44,6 +44,19 @@ BasePage {
             }
         }
     }
+
+    Button {
+        width : 200
+        height : 50
+        text : "refresh"
+        anchors.bottom : parent.bottom
+        anchors.bottomMargin : 16
+        anchors.horizontalCenter : parent.horizontalCenter
+        onClicked : {
+            refreshStream(streamName)
+        }
+    }
+
     Label {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
@@ -59,7 +72,7 @@ BasePage {
     function get_messages() {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
-        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, true], function(message_list){
+        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(message_list){
             streamLW.model.clear()
             fetching_messages = true
             for (var i=0; i<message_list.length; i++) {
@@ -69,4 +82,17 @@ BasePage {
             }
         })
     }
+
+    function refreshStream() {
+        // reload the stream list from the Python backend
+        rWin.log.info("refreshing stream " + streamName)
+        rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName], function(message_list){
+            for (var i=0; i<message_list.length; i++) {
+                var message = message_list[i]
+                streamLW.model.append({"messageUsername" : message.user.screen_name,
+                                       "messageText" : message.full_text})
+            }
+        })
+    }
+
 }
