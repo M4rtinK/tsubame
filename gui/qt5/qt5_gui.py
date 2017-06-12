@@ -252,6 +252,26 @@ class Streams(object):
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
             return []
 
+    def refresh_stream(self, stream_name):
+        """Get a message stream identified by stream name."""
+        stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+        if stream:
+            message_list = []
+            new_messages = stream.refresh()
+
+            for message in new_messages:
+                if isinstance(message, twitter.Status):
+                    message_dict = message.AsDict()
+                    message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
+                    message_list.append(message_dict)
+                else:
+                    self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
+
+            return message_list
+        else:
+            self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
+            return []
+
 
 class Search(object):
     """An easy to use search interface for the QML context."""
