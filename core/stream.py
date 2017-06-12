@@ -21,12 +21,15 @@
 #----------------------------------------------------------------------------
 
 import blitzdb
+import copy
 
 from core.signal import Signal
 from core.base import TsubamePersistentBase, TsubameBase
 from core import api as api_module
 from core import group
 from core import account as account_module
+from core import cache as cache_module
+from core import db as db_module
 
 from enum import Enum
 from threading import RLock
@@ -52,7 +55,8 @@ class MessageSource(TsubamePersistentBase):
     streams so that they actually have something to stream. :)
     """
 
-    data_defaults = {"enabled": True}
+    data_defaults = {"enabled": True,
+                     "cache_messages" : False}
 
     source_type = None
     root_message_source = True
@@ -62,6 +66,7 @@ class MessageSource(TsubamePersistentBase):
         self._messages = []
         self._latest_message_id = None
         self.refresh_done = Signal()
+        self._cache = None
 
     @property
     def messages(self):
@@ -79,6 +84,14 @@ class MessageSource(TsubamePersistentBase):
     def enabled(self, new_state):
         self.data.enabled = new_state
 
+    @property
+    def cache_messages(self):
+        return self.data.cache_messages
+
+    @cache_messages.setter
+    def cache_messages(self, value):
+        self.data.cache_messages = value
+
     def _do_refresh(self):
         raise NotImplementedError
 
@@ -92,12 +105,41 @@ class TwitterMessageSourceData(blitzdb.Document):
 
 class TwitterMessageSource(MessageSource):
 
-    data_defaults = MessageSource.data_defaults.copy()
-    data_defaults.update({"api_username" : None})
+    data_defaults = copy.deepcopy(MessageSource.data_defaults)
+    data_defaults.update({"api_username" : None,
+                          "tweet_cache_pk" : None})
 
     def __init__(self, db, data):
         super(TwitterMessageSource, self).__init__(db, data)
         self._api = api_module.api_manager.get_twitter_api(account_username=self.data.api_username)
+        if self.cache_messages:  # get messages from the cache
+            self._init_caching()
+            self._messages = self._cache.messages
+
+    def _init_caching(self):
+        pk = self.data.tweet_cache_pk
+        cache_db = db_module.db_manager.tweet_cache
+        if pk:  # cache already exists
+            try:
+                self._cache = cache_module.TweetCache.from_db(db=cache_db, pk=self.data.tweet_cache_pk)
+            except blitzdb.Document.DoesNotExist:
+                self.log.info("cache folder probably cleared - creating new cache instance for %s",
+                              self.__class__.__name__)
+                # cache folder has probably been cleared since last time,
+                # create a new clean cache instead
+                self._cache = cache_module.TweetCache.new(db=cache_db)
+                # save it so pk is valid
+                self._cache.save(commit=True)
+                # and remember its public key so we can find it next time
+                self.data.tweet_cache_pk = self._cache.pk
+                self.save(commit=True)
+        else:  # create new cache
+            self._cache = cache_module.TweetCache.new(db=cache_db)
+            # save it so pk is valid
+            self._cache.save(commit=True)
+            # and remember its public key so we can find it next time
+            self.data.tweet_cache_pk = self._cache.pk
+            self.save(commit=True)
 
     @property
     def api(self):
@@ -107,11 +149,15 @@ class TwitterMessageSource(MessageSource):
         # skip refresh if this source is not enabled
         if not self.enabled:
             return
-        self._do_refresh()
         new_messages = self._do_refresh()
         if new_messages:
             self._latest_message_id = new_messages[-1].id
             self._messages.append(new_messages)
+        if self.cache_messages:
+            if not self._cache:
+                self._init_caching()
+            self._cache.add_messages(new_messages)
+            self._cache.save(commit=True)
         self.refresh_done()
         return new_messages
 
@@ -123,10 +169,11 @@ class OwnTwitterTimelineData(blitzdb.Document):
 class OwnTwitterTimeline(TwitterMessageSource):
     """Own Twitter timeline."""
     source_type = SourceTypes.TWITTER_TIMELINE
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
 
     @classmethod
     def new(cls, db, api_username):
-        data = OwnTwitterTimelineData(cls.data_defaults.copy())
+        data = OwnTwitterTimelineData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         return cls(db, data)
 
@@ -145,10 +192,11 @@ class OwnTwitterMentionsData(blitzdb.Document):
 class OwnTwitterMentions(TwitterMessageSource):
     """Own Twitter mentions."""
     source_type = SourceTypes.TWITTER_TIMELINE
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
 
     @classmethod
     def new(cls, db, api_username):
-        data = OwnTwitterMentionsData(cls.data_defaults.copy())
+        data = OwnTwitterMentionsData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         return cls(db, data)
 
@@ -165,10 +213,11 @@ class OwnTwitterFavouritesData(blitzdb.Document):
 class OwnTwitterFavourites(TwitterMessageSource):
     """Stream of our own favorite messages."""
     source_type = SourceTypes.TWITTER_FAVOURITES
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
 
     @classmethod
     def new(cls, db, api_username):
-        data = OwnTwitterFavouritesData(cls.data_defaults.copy())
+        data = OwnTwitterFavouritesData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         return cls(db, data)
 
@@ -184,12 +233,12 @@ class TwitterUserTweets(TwitterMessageSource):
     """Tweets of a Twitter user."""
     source_type = SourceTypes.TWITTER_USER_TWEETS
 
-    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
     data_defaults.update({"source_username": None})
 
     @classmethod
     def new(cls, db, api_username, source_username):
-        data = TwitterUserTweetsData(cls.data_defaults.copy())
+        data = TwitterUserTweetsData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         data.source_username = source_username
         return cls(db, data)
@@ -210,12 +259,12 @@ class TwitterUserFavourites(TwitterMessageSource):
     """Favourites of a Twitter user."""
     source_type = SourceTypes.TWITTER_USER_FAVOURITES
 
-    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
     data_defaults.update({"source_username": None})
 
     @classmethod
     def new(cls, db, api_username, source_username):
-        data = TwitterUserFavouritesData(cls.data_defaults.copy())
+        data = TwitterUserFavouritesData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         data.source_username = source_username
         return cls(db, data)
@@ -235,12 +284,12 @@ class TwitterRemoteListData(blitzdb.Document):
 class TwitterRemoteList(TwitterMessageSource):
     source_type = SourceTypes.TWITTER_REMOTE_LIST
 
-    data_defaults = TwitterMessageSource.data_defaults.copy()
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
     data_defaults.update({"remote_list_id": None})
 
     @classmethod
     def new(cls, db, api_username, remote_list_id):
-        data = TwitterUserTweetsData(cls.data_defaults.copy())
+        data = TwitterUserTweetsData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         data.remote_list_id = remote_list_id
         return cls(db, data)
@@ -276,7 +325,7 @@ class MessageStream(TsubamePersistentBase):
     data_defaults = {
         "name" : "",
         "description" : "",
-        "inputs" : [],
+        "input_group" : None,
         "filter_group" : None
     }
 
@@ -292,7 +341,7 @@ class MessageStream(TsubamePersistentBase):
             # Nothing found, we can create a new stream with this name.
             pass
 
-        data = MessageStreamData(cls.data_defaults.copy())
+        data = MessageStreamData(copy.deepcopy(cls.data_defaults))
         data.name = name
         data.description = description
         return cls(db, data)
@@ -305,8 +354,26 @@ class MessageStream(TsubamePersistentBase):
     def __init__(self, db, data):
         super(MessageStream, self).__init__(db, data)
         self._messages = []
-        self._inputs = None
+        self._input_group = None
         self._filter_group = None
+
+        if self.data.input_group:
+            self._input_group = group.InputGroup(self.db, self.data.input_group)
+        else:  # create a new input group
+            self._input_group = group.InputGroup.new(self.db)
+            self.data.input_group = self._input_group.data
+
+        if self.data.filter_group:
+            self._filter_group = group.FilterGroup(self.db, self.data.filter_group)
+        else:  # create a new filter group
+            self._filter_group = group.FilterGroup.new(self.db)
+            self.data.filter_group = self._filter_group.data
+
+        # get initial messages
+        initial_messages = self.inputs.messages
+
+        self._messages = self.filters.filter_messages(initial_messages)
+
         self.refresh_done = Signal()
 
     @property
@@ -319,31 +386,10 @@ class MessageStream(TsubamePersistentBase):
 
     @property
     def inputs(self):
-        if self._inputs is None:
-            self._inputs = []
-            # lazy initialization
-            for input_data in self.data.inputs:
-                # get the input source class corresponding to the data class
-                # that has been serialized to the database
-                cls = CLASS_MAP.get(input_data.__class__)
-                if cls:
-                    # instantiate the input source class and add it to the
-                    # list of input sources
-                    self._inputs.append(cls(self.db, input_data))
-                else:
-                    self.log.error("Input source class not found for data: %s",
-                                   input_data)
-        return self._inputs
+        return self._input_group
 
     @property
     def filters(self):
-        if self._filter_group is None:
-            # first look if we have something in data
-            if self.data.filter_group:
-                self._filter_group = group.FilterGroup(self.db, self.data.filter_group)
-            else:  # create a new filter group
-                self._filter_group = group.FilterGroup.new(self.db)
-                self.data.filter_group = self._filter_group.data
         return self._filter_group
 
     def refresh(self):
@@ -355,10 +401,8 @@ class MessageStream(TsubamePersistentBase):
         return new_messages
 
     def _do_refresh(self):
-        new_messages = []
         # get new messages
-        for source in self._inputs:
-            new_messages.extend(source.refresh())
+        new_messages = self.inputs.refresh()
         # let's try to sort the messages
         # - this might or might not work as expected :)
         # UPDATE: does not work (at least for Twitter messages) :D
@@ -395,6 +439,17 @@ class StreamManager(TsubamePersistentBase):
         self._streams_loaded = False
         self._stream_list = []
         self._stream_dict = {}
+
+        #self._clear_streams()
+
+    def _clear_streams(self):
+        """Useful for debugging"""
+        self.log.debug("Deleting everything!!")
+        for data in self.data.stream_list:
+            self.db.delete(data)
+        self.data.stream_list = []
+        self.db.commit()
+        return
 
     def _load_streams(self):
         if self.data.stream_list:
@@ -446,14 +501,13 @@ class StreamManager(TsubamePersistentBase):
                 timeline = MessageStream.new(db=self.db,
                                              name=timeline_name,
                                              description=timeline_description)
-                # Actually use get-user-tweets instead of get-own-timeline
-                # as get-own-timeline has a very low rate limit (15 requests per 15 minutes),
-                # which makes it pretty useless for use during debugging without tweet caching.
-                timeline_source = TwitterUserTweets.new(db=self.db,
-                                                        api_username=account.username,
-                                                        source_username=account.username)
-
-                timeline.inputs.append(timeline_source)
+                # Using own timeline really needs caching (at least for development)
+                # due to the 15 requests/15 minutes rate limit.
+                timeline_source = OwnTwitterTimeline.new(db=self.db,
+                                                        api_username=account.username)
+                # named streams should have stream caching by default
+                timeline_source.cache_messages = True
+                timeline.inputs.add(timeline_source)
                 self.append_stream(timeline)
 
                 # add the mentions stream
@@ -464,8 +518,20 @@ class StreamManager(TsubamePersistentBase):
                                              description=mentions_description)
                 mentions_source = OwnTwitterMentions.new(db=self.db,
                                                          api_username=account.username)
-                mentions.inputs.append(mentions_source)
+                # named streams should have stream caching by default
+                mentions_source.cache_messages = True
+                mentions.inputs.add(mentions_source)
                 self.append_stream(mentions)
+
+                # call a refresh on the streams so that they have some content
+                timeline.refresh()
+                mentions.refresh()
+
+                # save the streams
+                timeline.save(commit=True)
+                mentions.save(commit=True)
+                # save own state
+                self.save(commit=True)
 
 
 # mapping of data classes to functional classes
