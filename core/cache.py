@@ -24,6 +24,7 @@ from core.base import TsubamePersistentBase
 
 import blitzdb
 import twitter
+import copy
 
 class MessageCache(TsubamePersistentBase):
 
@@ -89,9 +90,11 @@ class TweetCacheData(blitzdb.Document):
 
 class TweetCache(MessageCache):
 
+    data_defaults = copy.deepcopy(MessageCache.data_defaults)
+
     @classmethod
     def new(cls, db):
-        data = TweetCacheData(cls.data_defaults.copy())
+        data = TweetCacheData(copy.deepcopy(cls.data_defaults))
         return cls(db, data)
 
     @classmethod
