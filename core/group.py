@@ -20,10 +20,13 @@
 
 import blitzdb
 
+import copy
+
 from threading import RLock
 
 from core.base import TsubamePersistentBase
 from core import filter
+from core import stream
 
 class Group(TsubamePersistentBase):
     """And ordered serializable group of items.
@@ -36,34 +39,32 @@ class Group(TsubamePersistentBase):
     def __init__(self, db, data):
         super(Group, self).__init__(db, data)
         self._group_lock = RLock()
-        self._items = None
+        self._members = []
 
     def add(self, item):
         with self._group_lock:
             # the items to be added need to be
             # persistent class instances
             self.data.members.append(item.data)
-            self._items.append()
+            self._members.append(item)
 
     def clear(self):
         with self._group_lock:
             self.data.members.clear()
-            self._items.clear()
+            self._members.clear()
 
-    def _get_items(self):
+    def _load_members(self):
         raise NotImplementedError
 
     @property
     def members(self):
         with self._group_lock:
-            if self._items is None:
-                self._items = self._get_items()
-            return self._items
+            return self._members
 
     def pop(self, index):
         with self._group_lock:
             self.data.members.pop(index)
-            return self._items.pop(index)
+            return self._members.pop(index)
 
     # NOTE: The reordering operations need to be always done
     #       in the backing filter data list as well to keep
@@ -79,23 +80,34 @@ class Group(TsubamePersistentBase):
 
     def replace_items(self, new_items):
         with self._group_lock:
-            self._items.clear()
+            self._members.clear()
             self.data.members.clear()
-            self._items = new_items
+            self._members = new_items
             self.data.members = [i.data for i in new_items]
+
+    def __repr__(self):
+        return "%s containing %s" % (self.__class__.__name__, self.members)
+
 
 class FilterGroupData(blitzdb.Document):
     pass
 
+
 class FilterGroup(Group):
+
+    data_defaults = copy.deepcopy(Group.data_defaults)
 
     @classmethod
     def new(cls, db):
-        data = FilterGroupData(cls.data_defaults.copy())
+        data = FilterGroupData(copy.deepcopy(cls.data_defaults))
         return cls(db, data)
 
-    def _get_items(self):
-        items = []
+    def __init__(self, db, data):
+        super(FilterGroup, self).__init__(db, data)
+        with self._group_lock:
+            self._load_members()
+
+    def _load_members(self):
         for item_data in self.data.members:
             # Fetch the functional filter class based
             # based on data class.
@@ -104,8 +116,7 @@ class FilterGroup(Group):
                 self.log.error("Filter class class not found for data: %s",
                                 item_data)
             else:
-                items.append(cls(self.db, item_data))
-        return items
+                self._members.append(cls(self.db, item_data))
 
     def filter_messages(self, messages):
         for single_filter in self.members:
@@ -113,6 +124,50 @@ class FilterGroup(Group):
         return list(messages)  # make sure we return a list of messages
 
 
+class InputGroupData(blitzdb.Document):
+    pass
 
+
+class InputGroup(Group):
+
+    data_defaults = copy.deepcopy(Group.data_defaults)
+
+    @classmethod
+    def new(cls, db):
+        data = InputGroupData(copy.deepcopy(cls.data_defaults))
+        return cls(db, data)
+
+    def __init__(self, db, data):
+        super(InputGroup, self).__init__(db, data)
+        with self._group_lock:
+            self._load_members()
+
+    def _load_members(self):
+        for item_data in self.data.members:
+            # Fetch the functional input class based
+            # based on data class.
+            cls = stream.CLASS_MAP.get(item_data.__class__)
+            if cls is None:
+                self.log.error("Source class class not found for data: %s", item_data)
+            else:
+                self._members.append(cls(self.db, item_data))
+
+    @property
+    def messages(self):
+        """Get a combined list of all messages from the sources.
+        
+        TODO: time/message id based sorting ?
+        """
+        message_list = []
+        for member in self.members:
+            message_list.extend(member.messages)
+        return message_list
+
+    def refresh(self):
+        """Refresh all sources and return list of all new messages."""
+        new_messages = []
+        for source in self.members:
+            new_messages.extend(source.refresh())
+        return new_messages
 
 
