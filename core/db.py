@@ -94,7 +94,7 @@ class DatabaseManager(TsubameBase):
     def tweet_cache(self):
         if not self._tweet_cache_db:
             self._tweet_cache_db = CustomFileBackend(os.path.join(self.paths.cache_folder_path, TWEET_CACHE_DB_FOLDER))
-        return  self._main_db
+        return  self._tweet_cache_db
 
     def commit_all(self):
         for db in (self._main_db, self._tweet_cache_db):
