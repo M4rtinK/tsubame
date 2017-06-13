@@ -10,15 +10,14 @@ BasePage {
     property bool fetching_messages : false
     headerText : streamName
     content : ContentColumn {
-        ListView {
+        anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        ThemedListView {
             id : streamLW
             anchors.left : parent.left
             anchors.right : parent.right
             height : streamPage.height
-            spacing : rWin.c.style.listView.spacing
             model : ListModel {}
-            clip : true
-            VerticalScrollDecorator {}
             delegate : ThemedBackgroundRectangle {
                 id : messageDelegate
                 width : streamLW.width

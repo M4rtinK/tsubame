@@ -6,16 +6,22 @@ import "tsubame_components"
 
 Page {
     id : streamListPage
+
+    // list view background
+    Rectangle {
+        anchors.fill : parent
+        color : rWin.theme.color.list_view_background
+    }
+
     ContentColumn {
-        ListView {
+        anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        ThemedListView {
             id : streamLW
             anchors.left : parent.left
             anchors.right : parent.right
             height : streamListPage.height
-            spacing : rWin.c.style.listView.spacing
             model : ListModel {}
-            clip : true
-            VerticalScrollDecorator {}
             delegate : ThemedBackgroundRectangle {
                 id : streamDelegate
                 width : streamLW.width
@@ -46,6 +52,7 @@ Page {
         text : "<h2>No message streams available.</h2>"
         visible : streamLW.model.count == 0
     }
+
     Component.onCompleted : {
         // get streams from the Python backend
         reload_streams()
