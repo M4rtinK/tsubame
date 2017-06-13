@@ -523,13 +523,29 @@ class StreamManager(TsubamePersistentBase):
                 mentions.inputs.add(mentions_source)
                 self.append_stream(mentions)
 
+                # add the favourites stream
+                favourites_name = "%s favourites" % account.username
+                favourites_description = "Twitter favourites stream for %s." % account.username
+                favourites = MessageStream.new(db=self.db,
+                                             name=favourites_name,
+                                             description=favourites_description)
+                favourites_source = OwnTwitterFavourites.new(db=self.db,
+                                                         api_username=account.username)
+                # named streams should have stream caching by default
+                favourites_source.cache_messages = True
+                favourites.inputs.add(favourites_source)
+                self.append_stream(favourites)
+
                 # call a refresh on the streams so that they have some content
                 timeline.refresh()
                 mentions.refresh()
+                favourites.refresh()
 
                 # save the streams
                 timeline.save(commit=True)
                 mentions.save(commit=True)
+                favourites.save(commit=True)
+
                 # save own state
                 self.save(commit=True)
 
