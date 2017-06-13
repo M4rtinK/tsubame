@@ -87,6 +87,16 @@ ApplicationWindow {
     // theme
     property var theme
 
+    // device type
+    //
+    // desktop == 1
+    // smartphone == 2
+    // tablet == 3
+    property int deviceType : 2  // consider smartphone as default device
+    property bool isDesktop : deviceType == 1
+    property bool isSmartphone : deviceType == 2
+    property bool isTablet : deviceType == 3
+
     // actions
     property var actions : Actions {}
 
@@ -397,6 +407,9 @@ ApplicationWindow {
 
         // set the theme
         rWin.theme = values.theme
+
+        // set device type
+        rWin.deviceType = values.device_type
 
         // assign to constants
         rWin.c = values.constants

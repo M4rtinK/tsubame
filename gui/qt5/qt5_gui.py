@@ -193,9 +193,13 @@ class Qt5GUI(GUI):
             "needs_back_button": self.tsubame.platform.needs_back_button,
             "needs_page_background": self.tsubame.platform.needs_page_background,
             "sailfish" : self.tsubame.platform.platform_id == "jolla",
+            "device_type" : self.tsubame.platform.device_type,
             "highDPI" : self.highDPI,
             "theme" : self.theme
         }
+        self.log.debug("VALUES")
+        self.log.debug(values["device_type"])
+
         return values
 
     def _set_screen_size(self, screen_size):
