@@ -42,8 +42,10 @@ ApplicationWindow {
     // logging
     property var log : PythonLog {}
 
-    property int _landscapeDivider : rWin.platform.needs_back_button ? 5.5 : 8.0
-    property int headerHeight : rWin.inPortrait ? height/8.0 : height/_landscapeDivider
+    property real mainDivider : rWin.isSmartphone ? 8.0 : 14.0
+    property real backButtonDivider : rWin.isSmartphone ? 5.5 : 9.5
+    property int _landscapeDivider : rWin.platform.needs_back_button ? backButtonDivider : mainDivider
+    property int headerHeight : rWin.inPortrait ? height/mainDivider : height/_landscapeDivider
 
     property var c
 
