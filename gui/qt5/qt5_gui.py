@@ -245,6 +245,8 @@ class Streams(object):
                     message_dict = message.AsDict()
                     message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
                     message_list.append(message_dict)
+                    #log.debug("MESSAGE")
+                    #log.debug(message)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
 
