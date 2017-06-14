@@ -69,7 +69,7 @@ Page {
         height : headerHeight * 0.8
         anchors.top : parent.top
         anchors.left : parent.left
-        anchors.topMargin : rWin.c.style.main.spacing
+        anchors.topMargin : (headerHeight - height) / 2.0
         anchors.leftMargin : rWin.c.style.main.spacingBig
         iconName : "left_thin.png"
         //iconSource : "image://icons/"+ rWin.theme_id +"/back_small.png"
