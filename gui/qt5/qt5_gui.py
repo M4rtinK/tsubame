@@ -197,9 +197,6 @@ class Qt5GUI(GUI):
             "highDPI" : self.highDPI,
             "theme" : self.theme
         }
-        self.log.debug("VALUES")
-        self.log.debug(values["device_type"])
-
         return values
 
     def _set_screen_size(self, screen_size):
