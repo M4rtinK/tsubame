@@ -30,9 +30,11 @@ BasePage {
                     anchors.left : parent.left
                     anchors.leftMargin : rWin.c.style.main.spacing
                     anchors.verticalCenter : parent.verticalCenter
-                    spacing : rWin.c.style.main.spacing
-                    Label {
-                        text : "<b>" + messageUsername + "</b>"
+                    spacing : rWin.c.style.main.spacing * 2.0
+                    MessageHeader {
+                        name : "<b>" + messageUserName + "</b>"
+                        username : messageUserUsername
+                        avatarUrl : messageUserAvatarUrl
                     }
                     Label {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
@@ -76,7 +78,9 @@ BasePage {
             fetching_messages = true
             for (var i=0; i<message_list.length; i++) {
                 var message = message_list[i]
-                streamLW.model.append({"messageUsername" : message.user.screen_name,
+                streamLW.model.append({"messageUserName" : message.user.name,
+                                       "messageUserUsername" : message.user.screen_name,
+                                       "messageUserAvatarUrl" : message.user.profile_image_url,
                                        "messageText" : message.full_text})
             }
         })
