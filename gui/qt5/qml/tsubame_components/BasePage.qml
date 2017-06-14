@@ -20,6 +20,6 @@ HeaderPage {
         // (depends on back button being shown) modRana specific value
         headerHeight : rWin.headerHeight
         color : rWin.theme.color.page_header_text
-        font.pixelSize : rWin.isDesktop ? 32 * rWin.c.style.m : 48 * rWin.c.style.m
+        titlePixelSize : rWin.isDesktop ? 32 * rWin.c.style.m : 48 * rWin.c.style.m
     }
 }
