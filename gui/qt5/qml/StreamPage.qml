@@ -33,7 +33,7 @@ BasePage {
                     spacing : rWin.c.style.main.spacing * 2.0
                     MessageHeader {
                         name : "<b>" + messageUserName + "</b>"
-                        username : messageUserUsername
+                        username : "@" + messageUserUsername
                         avatarUrl : messageUserAvatarUrl
                     }
                     Label {
