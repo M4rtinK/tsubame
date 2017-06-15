@@ -32,12 +32,15 @@ log = logging.getLogger("core.startup")
 
 from core import tsubame_log
 from core import account as account_module
+from core import utils
+from core import api as api_module
 
 # error codes
 class StartupErrorCodes(IntEnum):
     API_TOKEN_FILE_MISSING=1
     API_TOKEN_FILE_INACCESSIBLE=2
     API_TOKEN_FILE_INVALID=3
+    TWITTER_APP_AUTHENTICATION_FAILED=4
 
 # paths
 TWITTER_API_TOKEN_FILE= "app_token.json"
@@ -110,14 +113,12 @@ class Startup(object):
                 account = subcommands.add_parser(Subcommand.ACCOUNT.value, help="Twitter account handling.")
                 account.required = False
                 account_subcommands = account.add_subparsers(dest="account_subcommand")
-                # add
-                account_add = account_subcommands.add_parser("add", help='add a Twitter account to Tsubame')
-                account_add.add_argument(type=str, dest="twitter_account_details", default=None, nargs=3,
-                                         # metavar=("ACCOUNT_USERNAME", "ACCOUNT_TOKEN", "ACCOUNT_SECRET"),
-                                         help='add twitter account by username, token and token secret')
+                # add twitter account
+                account_add = account_subcommands.add_parser("add-twitter", help='add a Twitter account to Tsubame')
+                account_add.add_argument(type=str, dest="twitter_username", default=None,
+                                         help='Twitter username (the thing after @)')
                 account_add.add_argument("--name", type=str, default=None, dest="twitter_account_name",
-                                         metavar="ACCOUNT_NAME", help="optional name of the account")
-
+                                         metavar="ACCOUNT_NAME", help="optional local name of the account")
                 # list
                 account_list = account_subcommands.add_parser("list", help='list all Twitter twitter_accounts added to Tsubame')
                 account_list.add_argument("--foo", action="store_true", dest="account_list")
@@ -142,20 +143,31 @@ class Startup(object):
 
         if self.args.account_subcommand:
             account_manager = account_module.AccountManager(main_db=self.tsubame.db.main)
-            if self.args.account_subcommand == "add":
-                account_username, token, token_secret = self.args.twitter_account_details
+            if self.args.account_subcommand == "add-twitter":
+                account_username = self.args.twitter_username
                 account_name = account_username
                 if self.args.twitter_account_name:
                     account_name = self.args.twitter_account_name
+
+                # try to get the Tsubame user Tokens from Twitter
+                try:
+                    consumer_key, consumer_secret = self.get_twitter_app_key()
+                    access_token_key, access_token_secret = utils.get_access_token(
+                        consumer_key=consumer_key, consumer_secret=consumer_secret
+                    )
+                except ValueError:
+                    print("Authentication with Twitter failed (are you online ?).")
+                    exit(StartupErrorCodes.TWITTER_APP_AUTHENTICATION_FAILED)
 
                 new_account = account_module.TwitterAccount.new(
                     db=self.tsubame.db.main,
                     username=account_username,
                     name=account_name,
-                    token=token,
-                    token_secret=token_secret
+                    token=access_token_key,
+                    token_secret=access_token_secret
                 )
                 account_manager.add(account=new_account)
+
             elif self.args.account_subcommand == "list":
                 account_count = len(account_manager.twitter_accounts)
                 if account_count:

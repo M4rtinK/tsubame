@@ -33,14 +33,22 @@ class TwitterAccountForAPINotFound(Exception):
 class ApiManager(TsubameBase):
     """Provides access to remote API access points."""
 
-    def __init__(self, account_manager, twitter_key, twitter_secret):
+    def __init__(self, account_manager, twitter_consumer_key, twitter_consumer_secret):
         super(ApiManager, self).__init__()
         self._account_manager = account_manager
-        self._twitter_key = twitter_key
-        self._twitter_secret = twitter_secret
+        self._twitter_consumer_key = twitter_consumer_key
+        self._twitter_consumer_secret = twitter_consumer_secret
 
         # Twitter API instances for different twitter_accounts.
         self._twitter_api_dict = {}
+
+    @property
+    def twitter_consumer_key(self):
+        return self._twitter_consumer_key
+
+    @property
+    def twitter_consumer_secret(self):
+        return self._twitter_consumer_secret
 
     def get_twitter_api(self, account_username):
         """Get Twitter API access object corresponding to the provided username.
@@ -54,8 +62,8 @@ class ApiManager(TsubameBase):
             twitter_account = self._account_manager.twitter_accounts.get(account_username)
             if twitter_account is None:
                 raise TwitterAccountForAPINotFound
-            api = twitter.Api(consumer_key=self._twitter_key,
-                              consumer_secret=self._twitter_secret,
+            api = twitter.Api(consumer_key=self._twitter_consumer_key,
+                              consumer_secret=self._twitter_consumer_secret,
                               access_token_key=twitter_account.token,
                               access_token_secret=twitter_account.token_secret,
                               tweet_mode="extended")
@@ -64,8 +72,8 @@ class ApiManager(TsubameBase):
 
 
 
-def initialize_api_manager(account_manager, twitter_key, twitter_secret):
+def initialize_api_manager(account_manager, twitter_consumer_key, twitter_consumer_secret):
     global api_manager
     api_manager = ApiManager(account_manager=account_manager,
-                             twitter_key=twitter_key,
-                             twitter_secret=twitter_secret)
+                             twitter_consumer_key=twitter_consumer_key,
+                             twitter_consumer_secret=twitter_consumer_secret)

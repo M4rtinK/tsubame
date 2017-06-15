@@ -155,8 +155,8 @@ class Tsubame(object):
         # initialize API manager
         # - this needs to be done only after twitter_accounts are loaded
         api.initialize_api_manager(account_manager=account.account_manager,
-                                   twitter_key=twitter_key,
-                                   twitter_secret=twitter_secret)
+                                   twitter_consumer_key=twitter_key,
+                                   twitter_consumer_secret=twitter_secret)
 
         # initialize the Stream manager
         stream.initialize_stream_manager(self.db.main)
