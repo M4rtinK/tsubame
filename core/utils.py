@@ -7,7 +7,6 @@ import sys
 import subprocess
 import re
 import time
-from requests_oauthlib import OAuth1Session
 import webbrowser
 
 from core import constants
@@ -305,6 +304,7 @@ def internal_get_file_contents(path):
 
 # based on example file from python-twitter sources
 def get_access_token(consumer_key, consumer_secret):
+    from requests_oauthlib import OAuth1Session
     oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret, callback_uri='oob')
 
     print('\nRequesting temp token from Twitter...\n')
