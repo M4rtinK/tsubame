@@ -151,6 +151,12 @@ class TwitterMessageSource(MessageSource):
             return
         new_messages = self._do_refresh()
         if new_messages:
+            new_messages.reverse()
+            # The python-twitter library returns messages as newest -> oldest,
+            # which is problematic for caching, so revert the order.
+            # Like this we can just use extend() when caching & the
+            # index of a message should not change as long as the message
+            # list is not flushed.
             self._latest_message_id = new_messages[-1].id
             self._messages.append(new_messages)
         if self.cache_messages:
