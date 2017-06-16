@@ -399,7 +399,6 @@ class MessageStream(TsubamePersistentBase):
         return self._filter_group
 
     def refresh(self):
-        self._do_refresh()
         new_messages = self._do_refresh()
         if new_messages:
             self._messages.extend(new_messages)
