@@ -41,6 +41,12 @@ BasePage {
                         text : messageText
                         wrapMode : Text.Wrap
                     }
+                    Label {
+                        width : messageDelegate.width - rWin.c.style.main.spacing * 2
+                        text : messageDate
+                        wrapMode : Text.Wrap
+                    }
+
                 }
             }
         }
@@ -70,18 +76,23 @@ BasePage {
         get_messages()
     }
 
+    function get_message_dict(message) {verticalCenter
+                 return {"messageUserName" : message.user.name,
+                         "messageUserUsername" : message.user.screen_name,
+                         "messageUserAvatarUrl" : message.user.profile_image_url,
+                         "messageText" : message.full_text,
+                         "messageDate" : message.created_at}
+    }
+
     function get_messages() {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
         rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(message_list){
             streamLW.model.clear()
             fetching_messages = true
-            for (var i=0; i<message_list.length; i++) {
+            for (var i=message_list.length-1; i>=0; i--) {
                 var message = message_list[i]
-                streamLW.model.append({"messageUserName" : message.user.name,
-                                       "messageUserUsername" : message.user.screen_name,
-                                       "messageUserAvatarUrl" : message.user.profile_image_url,
-                                       "messageText" : message.full_text})
+                streamLW.model.append(get_message_dict(message))
             }
         })
     }
@@ -92,8 +103,7 @@ BasePage {
         rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName], function(message_list){
             for (var i=0; i<message_list.length; i++) {
                 var message = message_list[i]
-                streamLW.model.append({"messageUsername" : message.user.screen_name,
-                                       "messageText" : message.full_text})
+                streamLW.model.insert(0, get_message_dict(message))
             }
         })
     }
