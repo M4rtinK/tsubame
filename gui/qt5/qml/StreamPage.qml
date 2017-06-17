@@ -43,10 +43,10 @@ BasePage {
                     }
                     Label {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
-                        text : messageDate
+                        text : messageSourcePlaintext + " | " + messageDate
                         wrapMode : Text.Wrap
+                        textFormat : Text.StyledText
                     }
-
                 }
             }
         }
@@ -81,7 +81,8 @@ BasePage {
                          "messageUserUsername" : message.user.screen_name,
                          "messageUserAvatarUrl" : message.user.profile_image_url,
                          "messageText" : message.full_text,
-                         "messageDate" : message.created_at}
+                         "messageDate" : message.created_at,
+                         "messageSourcePlaintext" : message.tsubame_message_source_plaintext}
     }
 
     function get_messages() {

@@ -24,6 +24,7 @@ import pyotherside
 
 import threading
 import twitter
+import re
 
 from core import constants
 from core.threads import threadMgr
@@ -31,6 +32,8 @@ from core import utils
 from core import tsubame_log
 from core import stream as stream_module
 from gui.gui_base import GUI
+
+REMOVE_HTML_RE = re.compile('<[^<]+?>')
 
 import logging
 no_prefix_log = logging.getLogger()
@@ -237,6 +240,7 @@ class Streams(object):
         message_dict = message.AsDict()
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
+        message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)
         return message_dict
 
     def get_stream_messages(self, stream_name, refresh=False):
