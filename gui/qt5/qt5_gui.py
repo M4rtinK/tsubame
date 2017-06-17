@@ -266,6 +266,7 @@ class Streams(object):
                 if isinstance(message, twitter.Status):
                     message_dict = message.AsDict()
                     message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
+                    message_dict["tsubame_created_at_epoch"] = message.created_at_in_seconds
                     message_list.append(message_dict)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
