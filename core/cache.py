@@ -110,4 +110,13 @@ class TweetCache(MessageCache):
         # first add the Status instances to the instance cache
         self._messages.extend(messages)
         # then add the dicts corresponding to the Status instances to backing data class
-        self.data.messages.extend([m.AsDict() for m in messages])
+        for message in messages:
+            message_dict = message.AsDict()
+            # Fixup some issues with the AsDict() method not being fully compatible
+            # with NewFromJsonDict().
+            message_dict["entities"] = {}
+            for key in ("urls", "user_mentions", "hashtags", "media"):
+                if key in message_dict:
+                    message_dict["entities"][key] = message_dict[key]
+                    del message_dict[key]
+            self.data.messages.append(message_dict)
