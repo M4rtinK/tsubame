@@ -232,6 +232,13 @@ class Streams(object):
 
         return stream_dict_list
 
+    def _process_twitter_message(self, message):
+        """Turn the twitter message to dict and apply any Tsubame related tweaks."""
+        message_dict = message.AsDict()
+        message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
+        message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
+        return message_dict
+
     def get_stream_messages(self, stream_name, refresh=False):
         """Get a list of messages for stream identified by stream name."""
         stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
@@ -239,17 +246,13 @@ class Streams(object):
             if refresh:
                 stream.refresh()
             message_list = []
-
             for message in stream.messages:
                 if isinstance(message, twitter.Status):
-                    message_dict = message.AsDict()
-                    message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
-                    message_list.append(message_dict)
+                   message_list.append(self._process_twitter_message(message))
                     #log.debug("MESSAGE")
                     #log.debug(message)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
-
             return message_list
         else:
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
@@ -261,16 +264,11 @@ class Streams(object):
         if stream:
             message_list = []
             new_messages = stream.refresh()
-
             for message in new_messages:
                 if isinstance(message, twitter.Status):
-                    message_dict = message.AsDict()
-                    message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
-                    message_dict["tsubame_created_at_epoch"] = message.created_at_in_seconds
-                    message_list.append(message_dict)
+                    message_list.append(self._process_twitter_message(message))
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
-
             return message_list
         else:
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
