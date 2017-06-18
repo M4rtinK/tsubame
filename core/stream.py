@@ -189,7 +189,8 @@ class OwnTwitterTimeline(TwitterMessageSource):
         # since the timeline was last refreshed.
         # NOTE: This has a pretty low rate limit - 15 requests per 15 minute window,
         #       so local persistent caching should be used where possible.
-        return self.api.GetHomeTimeline(since_id=self.latest_message_id)
+        return self.api.GetHomeTimeline(since_id=self.latest_message_id,
+                                        count=200)
 
 
 class OwnTwitterMentionsData(blitzdb.Document):
@@ -210,7 +211,8 @@ class OwnTwitterMentions(TwitterMessageSource):
     def _do_refresh(self):
         # Either just get messages from the timeline or get new messages
         # since the timeline was last refreshed.
-        return self.api.GetMentions(since_id=self.latest_message_id)
+        return self.api.GetMentions(since_id=self.latest_message_id,
+                                    count=200)
 
 
 class OwnTwitterFavouritesData(blitzdb.Document):
@@ -229,7 +231,8 @@ class OwnTwitterFavourites(TwitterMessageSource):
         return cls(db, data)
 
     def _do_refresh(self):
-        return self.api.GetFavorites(since_id=self.latest_message_id)
+        return self.api.GetFavorites(since_id=self.latest_message_id,
+                                     count=200)
 
 
 class TwitterUserTweetsData(blitzdb.Document):
