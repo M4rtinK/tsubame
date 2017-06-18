@@ -9,6 +9,14 @@ BasePage {
     property string streamName : ""
     property bool fetching_messages : false
     headerText : streamName
+    headerMenu : TopMenu {
+        MenuItem {
+            text : qsTr("Refresh")
+            onClicked : {
+                refreshStream(streamName)
+            }
+        }
+    }
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
@@ -55,19 +63,6 @@ BasePage {
             }
         }
     }
-
-    Button {
-        width : 200
-        height : 50
-        text : "refresh"
-        anchors.bottom : parent.bottom
-        anchors.bottomMargin : 16
-        anchors.horizontalCenter : parent.horizontalCenter
-        onClicked : {
-            refreshStream(streamName)
-        }
-    }
-
     Label {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
@@ -75,7 +70,6 @@ BasePage {
         text : fetching_messages ? qsTr("<h2>No messages available.</h2>") : qsTr("<h2>Fetching messages.</h2>")
         visible : streamLW.model.count == 0
     }
-
     onStreamNameChanged : {
         get_messages()
     }
