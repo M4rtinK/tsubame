@@ -13,7 +13,8 @@ import UC 1.0
 HeaderPage {
     id : searchPage
     property alias headerTextColor : headerLabel.color
-    property alias headerText: headerLabel.title
+    property alias headerText : headerLabel.title
+    property alias headerMenu : headerLabel.menu
     headerContent : PageHeader {
         id : headerLabel
         // override the default header height with a dynamic
