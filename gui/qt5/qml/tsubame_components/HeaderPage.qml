@@ -35,7 +35,7 @@ Page {
         anchors.fill : parent
     }
 
-    Flickable {
+    PlatformFlickable {
         id : pageFlickable
         anchors.fill: parent
         contentWidth: parent.width
