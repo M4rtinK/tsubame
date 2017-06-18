@@ -103,8 +103,12 @@ BasePage {
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
             }
-        var messageCount = message_list.length
-        rWin.notify(qsTr("Added " + messageCount + " new messages."), 2000)
+            var messageCount = message_list.length
+            if (messageCount > 0) {
+                rWin.notify(qsTr("Added " + messageCount + " new messages."), 2000)
+            } else {
+                rWin.notify(qsTr("No new messages found."), 2000)
+            }
         })
     }
 }
