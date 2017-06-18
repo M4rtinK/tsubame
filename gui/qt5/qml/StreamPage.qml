@@ -18,6 +18,10 @@ BasePage {
             anchors.right : parent.right
             height : streamPage.height
             model : ListModel {}
+            // The messages are ordered as oldest -> newest in the list
+            // and we want to have the newest messages on the top of the
+            // list view. So use the bottom-to-top layout direction.
+            verticalLayoutDirection : ListView.BottomToTop
             delegate : ThemedBackgroundRectangle {
                 id : messageDelegate
                 width : streamLW.width
@@ -91,10 +95,10 @@ BasePage {
         rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(message_list){
             streamLW.model.clear()
             fetching_messages = true
-            for (var i=message_list.length-1; i>=0; i--) {
-                var message = message_list[i]
-                streamLW.model.append(get_message_dict(message))
+            for (var i=0; i<message_list.length; i++) {
+                streamLW.model.append(get_message_dict(message_list[i]))
             }
+            streamLW.positionViewAtEnd()
         })
     }
 
@@ -103,10 +107,10 @@ BasePage {
         rWin.log.info("refreshing stream " + streamName)
         rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName], function(message_list){
             for (var i=0; i<message_list.length; i++) {
-                var message = message_list[i]
-                streamLW.model.insert(0, get_message_dict(message))
+                streamLW.model.append(get_message_dict(message_list[i]))
             }
+        var messageCount = message_list.length
+        rWin.notify(qsTr("Added " + messageCount + " new messages."), 2000)
         })
     }
-
 }
