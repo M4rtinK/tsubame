@@ -80,7 +80,9 @@ BasePage {
                          "messageUserAvatarUrl" : message.user.profile_image_url,
                          "messageText" : message.full_text,
                          "messageDate" : message.created_at,
-                         "messageSourcePlaintext" : message.tsubame_message_source_plaintext}
+                         "messageSourcePlaintext" : message.tsubame_message_source_plaintext,
+                         "messageData" : message,  // full type-specific dict describing the message
+                         }
     }
 
     function get_messages() {
