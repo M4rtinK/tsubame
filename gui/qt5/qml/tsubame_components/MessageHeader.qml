@@ -14,6 +14,7 @@ Row {
         width : 48 * rWin.c.style.m
         height : 48 * rWin.c.style.m
         smooth : true
+        asynchronous : true
     }
     Column {
         anchors.verticalCenter : userAvatar.verticalCenter
