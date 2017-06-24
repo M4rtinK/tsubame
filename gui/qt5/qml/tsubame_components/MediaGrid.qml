@@ -12,7 +12,6 @@ Grid {
     visible: mediaList != null
     property real imageWidth: mediaGrid.width
     property real imageHeight: mediaGrid.width * 2 / 3
-    property real spacing : 0
     property bool isSingle: mediaGrid.mediaList != null && mediaGrid.mediaList.length == 1
     function computeSizes() {
         switch (mediaGrid.mediaList.length) {

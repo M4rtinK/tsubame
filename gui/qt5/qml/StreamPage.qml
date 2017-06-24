@@ -63,7 +63,7 @@ BasePage {
                     MediaGrid {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
                         mediaList : messageData.media
-                        spacing : rWin.c.style.main.spacing * 2.0
+                        spacing : rWin.c.style.main.spacing / 2.0
                     }
                 }
             }
