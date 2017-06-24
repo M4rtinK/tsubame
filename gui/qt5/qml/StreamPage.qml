@@ -41,7 +41,8 @@ BasePage {
                     id : contentC
                     anchors.left : parent.left
                     anchors.leftMargin : rWin.c.style.main.spacing
-                    anchors.verticalCenter : parent.verticalCenter
+                    anchors.right : parent.left
+                    anchors.rightMargin : rWin.c.style.main.spacing
                     spacing : rWin.c.style.main.spacing * 2.0
                     MessageHeader {
                         name : "<b>" + messageUserName + "</b>"
@@ -58,6 +59,11 @@ BasePage {
                         text : messageSourcePlaintext + " | " + messageDate
                         wrapMode : Text.Wrap
                         textFormat : Text.StyledText
+                    }
+                    MediaGrid {
+                        width : messageDelegate.width - rWin.c.style.main.spacing * 2
+                        mediaList : messageData.media
+                        spacing : rWin.c.style.main.spacing * 2.0
                     }
                 }
             }
