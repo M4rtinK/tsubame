@@ -5,7 +5,7 @@
 import QtQuick 2.0
 import UC 1.0
 
-Item {
+MouseArea {
     id: container
     property alias source: image.source
     property alias image: image
@@ -16,6 +16,8 @@ Item {
         id: background
         anchors.fill: parent
         opacity: 0.5
+        propagateComposedEvents : true
+        onClicked : mouse.accepted = false
 
         Behavior on opacity {
             FadeAnimator {}
