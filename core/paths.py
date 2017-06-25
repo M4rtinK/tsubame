@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #---------------------------------------------------------------------------
 import os
+import subprocess
 from core import utils
 
 import logging
@@ -132,6 +133,17 @@ def get_XDG_cache_path():
         get_profile_name()
     )
 
+def get_XDG_pictures_path():
+    try:
+        path = subprocess.check_output(["xdg-user-dir", "PICTURES"]).decode("utf-8")
+        # there might be a dangling newline, so make sure to remove it
+        if path[-1] == "\n":
+            path = path[:-1]
+    except subprocess.CalledProcessError:
+        log.exception("calling xdg-user-dir PICTURES failed, using default (~/Pictures)")
+        path = os.path.join([get_HOME_path(), "Pictures"])
+    return path
+
 def get_XDG_profile_path():
     """Return XDG-compatible profile folder path
 
@@ -172,6 +184,10 @@ class Paths(object):
         self._profile_folder_path = get_XDG_config_path()
         utils.create_folder_path(self._profile_folder_path)
 
+        # cached XDG paths (so that the xdg-user-dir mus be called only once
+        #                   per path per Tsubame run)
+        self._xdg_pictures_path = None
+
     ## Important Tsubame folders ##
 
     @property
@@ -207,6 +223,18 @@ class Paths(object):
     def theme_folder_path(self):
         """Return path to folder used to store icons."""
         return self._assure_path(os.path.join(DATA_FOLDER_NAME, THEME_FOLDER_NAME))
+
+    @property
+    def pictures_folder_path(self):
+        """Return path to the system-wide folder which should be used for picture storage.
+        
+        This is actually not a Tsubame specific path, but rather a cache
+        of the system-wide picture folder path so that xdq-user-dir does not have
+        to be called all the time.
+        """
+        if not self._xdg_pictures_path:
+            self._xdg_pictures_path = get_XDG_pictures_path()
+        return self._xdg_pictures_path
 
     @property
     def version_string(self):
