@@ -18,6 +18,7 @@ Page {
     property alias headerOpacity : header.opacity
     property alias headerVisible : header.visible
     property alias backButtonWidth : backButton.width
+    property alias backButtonVisible : backButton.visible
     property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
     property int bottomPadding : 0
