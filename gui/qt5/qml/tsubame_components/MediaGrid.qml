@@ -69,6 +69,14 @@ Grid {
             // TODO: switch suffix based on requested image size
             //       - should be doable as we known what size corresponds to which suffix
             source: modelData.media_url_https + ":large"
+
+            onClicked : {
+                rWin.log.debug("image clicked: " + index)
+                var imageBrowser = rWin.loadPage("ImageBrowserPage")
+                imageBrowser.mediaList = mediaGrid.mediaList
+                imageBrowser.imageIndex = index
+                rWin.pushPageInstance(imageBrowser)
+            }
         }
     }
 }
