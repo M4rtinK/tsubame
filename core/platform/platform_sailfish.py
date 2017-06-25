@@ -21,6 +21,7 @@ from core import constants
 from core import paths
 from core.platform.base_platform_module import PlatformModule
 import os
+import subprocess
 
 # third party apps for Sailfish OS should use the harbour- prefix
 SAILFISH_MODRANA_PROFILE_NAME = "harbour-tsubame"
@@ -112,3 +113,6 @@ class PlatformSailfishOS(PlatformModule):
     def universal_components_backend(self):
         """We use the Silica UC backend on Sailfish OS."""
         return "silica"
+
+    def open_url(self, url):
+        subprocess.call(["xdg-open", url])
