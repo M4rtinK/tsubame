@@ -41,7 +41,6 @@ Page {
         id : pageFlickable
         anchors.fill: parent
         contentWidth: parent.width
-        contentHeight: (headerHeight + contentField.childrenRect.height + bottomPadding)
         //flickableDirection: Flickable.VerticalFlick
         VerticalScrollDecorator {}
         Item {
