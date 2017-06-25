@@ -31,7 +31,7 @@ BasePage {
 
     content : ThemedListView {
         id: view
-        property real imageWidth: Math.max(view.width, view.height)
+        property real imageWidth: Math.max(imageBrowser.width, imageBrowser.height)
         //anchors.fill : parent
         anchors.left : parent.left
         anchors.right : parent.right
