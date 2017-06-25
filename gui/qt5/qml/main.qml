@@ -358,6 +358,10 @@ ApplicationWindow {
             rWin.log.info("redirecting QML log to the Python log")
         })
 
+        python.setHandler("openURL", function(url) {
+            rWin.openURL(url)
+        })
+
         // get the argv & remove the qml launcher
         // & qml file name from it (args nr. 0 and 1)
         var argv = Qt.application.arguments.slice(2)
@@ -632,6 +636,11 @@ ApplicationWindow {
         //TODO: value checking :D
         rWin.visibility = value
         rWin._lastVisibility = rWin.visibility
+    }
+
+    function openURL(url) {
+        rWin.log.debug("opening URL: " + url)
+        Qt.openUrlExternally(url)
     }
 }
 

@@ -139,8 +139,8 @@ class Qt5GUI(GUI):
         })
 
     def open_url(self, url):
-        # TODO: implement this
-        pass
+        # send signal to the QML context to open the provided URL
+        pyotherside.send("openURl", url)
 
     @property
     def screen_wh(self):
