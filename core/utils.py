@@ -7,7 +7,6 @@ import sys
 import subprocess
 import re
 import time
-import webbrowser
 
 from core import constants
 from core import qrc
@@ -303,7 +302,7 @@ def internal_get_file_contents(path):
             return bytearray(f.read())
 
 # based on example file from python-twitter sources
-def get_access_token(consumer_key, consumer_secret):
+def get_access_token(consumer_key, consumer_secret, open_url_function):
     from requests_oauthlib import OAuth1Session
     oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret, callback_uri='oob')
 
@@ -322,7 +321,7 @@ def get_access_token(consumer_key, consumer_secret):
           'in the next step to obtaining an Authentication Token: \n'
           '\n\t{0}'.format(url))
 
-    webbrowser.open(url)
+    open_url_function(url)
     pincode = input('\nEnter your pincode? ')
 
     print('\nGenerating and signing request for an access token...\n')
