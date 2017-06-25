@@ -153,7 +153,8 @@ class Startup(object):
                 try:
                     consumer_key, consumer_secret = self.get_twitter_app_key()
                     access_token_key, access_token_secret = utils.get_access_token(
-                        consumer_key=consumer_key, consumer_secret=consumer_secret
+                        consumer_key=consumer_key, consumer_secret=consumer_secret,
+                        open_url_function=self.tsubame.platform.open_url
                     )
                 except ValueError:
                     print("Authentication with Twitter failed (are you online ?).")
