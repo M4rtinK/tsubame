@@ -120,9 +120,6 @@ class Tsubame(object):
         self.db = db.db_manager
         self.args = self.startup.args
 
-        # handle tasks requested from the CLI
-        self.startup.handle_CLI_tasks()
-
         # load the platform module
         platform_id = self.args.platform_id
         if platform_id is None:  # not set via CLI
@@ -145,6 +142,9 @@ class Tsubame(object):
 
         # instantiate the platform module
         self.platform = platform_module.get_module()
+
+        # handle tasks requested from the CLI
+        self.startup.handle_CLI_tasks()
 
         # load accounts
         account.load_accounts(main_db=self.db.main)
