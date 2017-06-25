@@ -29,7 +29,7 @@ BasePage {
         }
     }
 
-    topLevelContent : ThemedListView {
+    content : ThemedListView {
         id: view
         property real imageWidth: Math.max(view.width, view.height)
         //anchors.fill : parent
