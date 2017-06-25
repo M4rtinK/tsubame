@@ -11,7 +11,7 @@ import UC 1.0
 */
 
 HeaderPage {
-    id : searchPage
+    id : headerPage
     property alias headerTextColor : headerLabel.color
     property alias headerText : headerLabel.title
     property alias headerMenu : headerLabel.menu
@@ -22,5 +22,6 @@ HeaderPage {
         headerHeight : rWin.headerHeight
         color : rWin.theme.color.page_header_text
         titlePixelSize : rWin.isDesktop ? 32 * rWin.c.style.m : 48 * rWin.c.style.m
+        visible : headerPage.headerVisible
     }
 }

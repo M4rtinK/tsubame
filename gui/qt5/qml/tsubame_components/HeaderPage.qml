@@ -16,7 +16,9 @@ Page {
     property alias headerContent : hContent.children
     property alias headerWidth : header.width
     property alias headerOpacity : header.opacity
+    property alias headerVisible : header.visible
     property alias backButtonWidth : backButton.width
+    property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
     property int bottomPadding : 0
     property real availableHeight : parent.height - bottomPadding - headerHeight
@@ -62,6 +64,13 @@ Page {
                 height : headerHeight
             }
         }
+    }
+    // Top level content is above the flickable and the header,
+    // but still bellow the back button (if any).
+
+    Item {
+        id : topLevel
+        anchors.fill: parent
     }
     MIconButton {
         id : backButton
