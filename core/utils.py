@@ -121,29 +121,29 @@ def is_the_string_an_image(s):
         return False
 
 
-def create_folder_path(newPath):
+def create_folder_path(new_path):
     """Create a path for a directory and all needed parent folders
     -> parent directories will be created
     -> if directory already exists, then do nothing
     -> if there is another filesystem object (like a file)
     with the same name, raise an exception"""
-    if not newPath:
+    if not new_path:
         log.error("cannot create folder, wrong path:")
-        log.error(newPath)
+        log.error(new_path)
         return False
-    if os.path.isdir(newPath):
+    if os.path.isdir(new_path):
         return True
-    elif os.path.isfile(newPath):
-        log.error("cannot create directory, file already exists: %s", newPath)
+    elif os.path.isfile(new_path):
+        log.error("cannot create directory, file already exists: %s", new_path)
         return False
     else:
-        log.info("creating path: %s", newPath)
+        log.info("creating path: %s", new_path)
         try:
-            head, tail = os.path.split(newPath)
+            head, tail = os.path.split(new_path)
             if head and not os.path.isdir(head):
                 os.makedirs(head)
             if tail:
-                os.mkdir(newPath)
+                os.mkdir(new_path)
             return True
         except Exception:
             log.exception("path creation failed")
