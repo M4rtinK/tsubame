@@ -174,7 +174,8 @@ class PlatformModule(object):
 
     def open_url(self, url):
         """Open a URL."""
-        pass
+        import webbrowser
+        webbrowser.open(url)
 
     @property
     def connectivity_status(self):
