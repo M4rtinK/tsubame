@@ -20,7 +20,7 @@ BasePage {
                 var url = imageData.media_url_https + ":large"
                 rWin.python.call("tsubame.gui.download.download_image", [url], function(download_success){
                     if (download_success) {
-                        rWin.notify(qsTr("Image download finished."), 2000)
+                        rWin.notify(qsTr("Image downloaded."), 2000)
                     } else {
                         rWin.notify(qsTr("Image download failed."), 3000)
                     }
