@@ -4,16 +4,13 @@ import QtQuick 2.0
 import UC 1.0
 import "tsubame_components"
 
-Page {
+BasePage {
     id : streamListPage
 
-    // list view background
-    Rectangle {
-        anchors.fill : parent
-        color : rWin.theme.color.list_view_background
-    }
+    headerText: qsTr("Message streams")
+    backButtonVisible : false
 
-    ContentColumn {
+    content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         ThemedListView {
