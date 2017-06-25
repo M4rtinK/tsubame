@@ -31,6 +31,7 @@ from core.threads import threadMgr
 from core import utils
 from core import tsubame_log
 from core import stream as stream_module
+from core import download
 from gui.gui_base import GUI
 
 REMOVE_HTML_RE = re.compile('<[^<]+?>')
@@ -39,6 +40,8 @@ import logging
 no_prefix_log = logging.getLogger()
 log = logging.getLogger("mod.gui.qt5")
 qml_log = logging.getLogger("mod.gui.qt5.qml")
+
+IMAGE_SOURCE_TWITTER = "twitter"
 
 def newlines2brs(text):
     """ QML uses <br> instead of \n for linebreak """
@@ -101,6 +104,9 @@ class Qt5GUI(GUI):
 
         # stream management
         self.streams = Streams(self)
+
+        # download handling
+        self.download = Download(self)
 
         # log for log messages from the QML context
         self.qml_log = qml_log
@@ -209,6 +215,24 @@ class Qt5GUI(GUI):
         :type screen_size: a tuple of integers
         """
         self._screen_size = screen_size
+
+class Download(object):
+    """An easy to use interface for file download for the QML context."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def download_image(self, url, image_source=IMAGE_SOURCE_TWITTER):
+        filename = url.split('/')[-1]
+        # TODO: use constant
+        if image_source == IMAGE_SOURCE_TWITTER:
+            # split the ":<stuff>" suffix that Twitter image URLs might have
+            filename = filename.rsplit(":", 1)[0]
+        download_folder = os.path.join(self.gui.tsubame.paths.pictures_folder_path,
+                                       "tsubame",
+                                       image_source)
+        return download.download_file_(url=url, download_folder=download_folder, filename=filename)
+
 
 class Streams(object):
     """An easy to use interface to message streams for the QML context."""

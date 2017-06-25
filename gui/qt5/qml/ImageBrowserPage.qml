@@ -11,6 +11,23 @@ BasePage {
     headerText : "Image " + (imageIndex + 1) + "/" + view.count
     property var mediaList : []
     property alias imageIndex : view.currentIndex
+    headerMenu : TopMenu {
+        MenuItem {
+            text : qsTr("Download image")
+            onClicked : {
+                rWin.log.info("starting image download")
+                var imageData = imageBrowser.mediaList[imageBrowser.imageIndex]
+                var url = imageData.media_url_https + ":large"
+                rWin.python.call("tsubame.gui.download.download_image", [url], function(download_success){
+                    if (download_success) {
+                        rWin.notify(qsTr("Image download finished."), 2000)
+                    } else {
+                        rWin.notify(qsTr("Image download failed."), 3000)
+                    }
+                })
+            }
+        }
+    }
 
     topLevelContent : ThemedListView {
         id: view
