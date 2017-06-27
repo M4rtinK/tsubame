@@ -115,7 +115,8 @@ class TwitterMessageSource(MessageSource):
         if self.cache_messages:  # get messages from the cache
             self._init_caching()
             self._messages = self._cache.messages
-            self._latest_message_id = self._messages[-1].id
+            if self._messages:
+                self._latest_message_id = self._messages[-1].id
 
     def _init_caching(self):
         pk = self.data.tweet_cache_pk
