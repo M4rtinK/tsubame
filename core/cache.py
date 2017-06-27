@@ -104,7 +104,12 @@ class TweetCache(MessageCache):
 
     def _load_messages(self):
         # create Twitter Status instances from the dicts stored in BlitzDB
-        self._messages = [twitter.models.Status.NewFromJsonDict(m) for m in self.data.messages]
+        try:
+            self._messages = [twitter.models.Status.NewFromJsonDict(m) for m in self.data.messages]
+        except Exception:
+            self.log.exception("cache loading failed, clearing cache")
+            self.data.messages = []
+            self._messages = []
 
     def _do_add_messages(self, messages):
         # first add the Status instances to the instance cache
