@@ -491,6 +491,29 @@ class StreamManager(TsubamePersistentBase):
             self.data.stream_list.append(stream.data)
             self.stream_dict[stream.name] = stream
 
+    def delete_stream(self, stream_name):
+        with self._lock:
+            if not self._streams_loaded:  # not yet loaded
+                self._load_streams()
+            stream = self.stream_dict.get(stream_name, None)
+            if stream:  # remove stream from tracking & database
+                self._stream_list.remove(stream)
+                self.data.stream_list.remove(stream.data)
+                stream.data.delete()
+                self.save(commit=True)
+                self.db.commit()
+                # This is actually pretty brutal & messy as we basically
+                # leave a lof of garbage in the database in the form of
+                # unreferenced sources, filters and caches used by the deleted
+                # stream. We really should do this properly eventually.
+                #
+                # We should also have unit tests for this to make sure the
+                # stream deletion actually works correctly.
+                return True
+            else:
+                self.log.error("can't delete stream - stream name unknown: %s", stream_name)
+                return False
+
     def add_initial_streams(self):
         """Add some initial "default" streams.
         
