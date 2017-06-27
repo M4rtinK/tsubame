@@ -547,6 +547,14 @@ ApplicationWindow {
         }
     }
 
+    function pop() {
+        // pop a page from the stack
+        // TODO: prevent the stack from becoming empty
+        //      (keep the stream list page as the default page)
+        rWin.pageStack.pop(undefined, !rWin.animate)
+    }
+
+
     // Working with options
     function get(key, default_value, callback) {
         //rWin.log.debug("get " + callback)
