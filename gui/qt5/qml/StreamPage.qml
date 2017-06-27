@@ -11,6 +11,14 @@ BasePage {
     headerText : streamName
     headerMenu : TopMenu {
         MenuItem {
+            text: qsTr("Stream settings")
+            onClicked : {
+                var streamSettingsPage = rWin.loadPage("StreamSettingsPage")
+                streamSettingsPage.streamName = streamName
+                rWin.pushPageInstance(streamSettingsPage)
+            }
+        }
+        MenuItem {
             text : qsTr("Refresh")
             onClicked : {
                 refreshStream(streamName)

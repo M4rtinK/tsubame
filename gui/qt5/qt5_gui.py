@@ -239,12 +239,15 @@ class Streams(object):
 
     def __init__(self, gui):
         self.gui = gui
+        # prevent the stream list populat from running if this is not the initial
+        # get_stream_list() call
+        self._first_get_stream_list_run = True
 
     def get_stream_list(self):
         """Get list of message streams."""
         stream_list = stream_module.stream_manager.stream_list
         # Populate the stream list with some initial content if empty.
-        if not stream_list:
+        if not stream_list and self._first_get_stream_list_run:
             self.gui.log.info("stream list is empty - adding initial streams")
             stream_module.stream_manager.add_initial_streams()
             stream_list = stream_module.stream_manager.stream_list
@@ -257,6 +260,7 @@ class Streams(object):
             # sophisticated later. :)
             stream_dict_list.append(dict(stream.data))
 
+        self._first_get_stream_list_run = False
         return stream_dict_list
 
     def _process_twitter_message(self, message):
@@ -302,6 +306,9 @@ class Streams(object):
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
             return []
 
+    def delete_stream(self, stream_name):
+        """Try to delete a stream by name."""
+        return stream_module.stream_manager.delete_stream(stream_name)
 
 class Search(object):
     """An easy to use search interface for the QML context."""
