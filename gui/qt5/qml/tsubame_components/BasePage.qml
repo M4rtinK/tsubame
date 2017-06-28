@@ -14,7 +14,7 @@ HeaderPage {
     id : headerPage
     property alias headerTextColor : headerLabel.color
     property alias headerText : headerLabel.title
-    property alias headerMenu : headerLabel.menu
+    property var headerMenu : null
     headerContent : PageHeader {
         id : headerLabel
         // override the default header height with a dynamic
@@ -24,4 +24,29 @@ HeaderPage {
         titlePixelSize : rWin.isDesktop ? 32 * rWin.c.style.m : 48 * rWin.c.style.m
         visible : headerPage.headerVisible
     }
+
+    Button {
+        visible : headerMenu && rWin.platform.needs_back_button
+        // so likely also needs menu button (but we should still split it in the future)
+        anchors.top : parent.top
+        anchors.topMargin : (headerHeight - height) / 2.0
+        anchors.right : parent.right
+        anchors.rightMargin : rWin.c.style.main.spacingBig
+        width : headerHeight * 0.8
+        height : headerHeight * 0.8
+        Image {
+            smooth : true
+            source : "menu.svg"
+            anchors.verticalCenter : parent.verticalCenter
+            anchors.horizontalCenter : parent.horizontalCenter
+            width : headerHeight * 0.6
+            height : headerHeight * 0.6
+        }
+        onClicked : {
+            if (headerMenu) {
+                headerMenu.popup()
+            }
+        }
+    }
+
 }
