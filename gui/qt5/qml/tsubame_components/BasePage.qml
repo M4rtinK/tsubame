@@ -14,7 +14,7 @@ HeaderPage {
     id : headerPage
     property alias headerTextColor : headerLabel.color
     property alias headerText : headerLabel.title
-    property var headerMenu : null
+    property alias headerMenu : headerLabel.menu
     headerContent : PageHeader {
         id : headerLabel
         // override the default header height with a dynamic
@@ -23,6 +23,7 @@ HeaderPage {
         color : rWin.theme.color.page_header_text
         titlePixelSize : rWin.isDesktop ? 32 * rWin.c.style.m : 48 * rWin.c.style.m
         visible : headerPage.headerVisible
+        menuButtonEnabled : false
     }
 
     Button {
