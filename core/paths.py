@@ -135,7 +135,9 @@ def get_XDG_cache_path():
 
 def get_XDG_pictures_path():
     try:
-        path = subprocess.check_output(["xdg-user-dir", "PICTURES"]).decode("utf-8")
+        path = os.environ.get("XDG_PICTURES_DIR", None)
+        if path is None:
+            path = subprocess.check_output(["xdg-user-dir", "PICTURES"]).decode("utf-8")
         # there might be a dangling newline, so make sure to remove it
         if path[-1] == "\n":
             path = path[:-1]
