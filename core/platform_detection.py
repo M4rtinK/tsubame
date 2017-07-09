@@ -35,6 +35,13 @@ def _try_to_detect_platform():
     if qrc.is_qrc:
         return PlatformID.ANDROID
 
+    try:
+        import platform
+        if platform.node() == "Sailfish":
+            return PlatformID.SAILFISH
+    except:
+        log.exception("the Python stdlib platform module is apparently unusable on this platform")
+
     # check CPU architecture
     import subprocess
 
@@ -46,13 +53,6 @@ def _try_to_detect_platform():
     if sys.platform == "qnx6":
         log.info("* BlackBerry 10 device detected")
         return PlatformID.BB10
-
-    try:
-        import platform
-        if platform.node() == "Sailfish":
-            return PlatformID.SAILFISH
-    except:
-        log.exception("the Python stdlib platform module is apparently unusable on this platform")
 
     # check procFS
     if os.path.exists("/proc/cpuinfo"):
