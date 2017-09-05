@@ -266,6 +266,13 @@ class Streams(object):
     def _process_twitter_message(self, message):
         """Turn the twitter message to dict and apply any Tsubame related tweaks."""
         message_dict = message.AsDict()
+
+        for url in message_dict.get("urls", []):
+            full_text = message_dict["full_text"]
+            short_url = url["url"]
+            link = '<a href="%s">%s</a>' % (url["expanded_url"], url["expanded_url"])
+            message_dict["full_text"] = full_text.replace(short_url, link)
+
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
         message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)

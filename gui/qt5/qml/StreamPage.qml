@@ -61,6 +61,10 @@ BasePage {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
                         text : messageText
                         wrapMode : Text.Wrap
+                        onLinkActivated : {
+                            rWin.log.info('message link clicked: ' + link)
+                            Qt.openUrlExternally(link)
+                        }
                     }
                     Label {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
