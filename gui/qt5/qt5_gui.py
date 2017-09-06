@@ -267,11 +267,17 @@ class Streams(object):
         """Turn the twitter message to dict and apply any Tsubame related tweaks."""
         message_dict = message.AsDict()
 
+        # make normal URLs clickable
         for url in message_dict.get("urls", []):
             full_text = message_dict["full_text"]
             short_url = url["url"]
             link = '<a href="%s">%s</a>' % (url["expanded_url"], url["expanded_url"])
             message_dict["full_text"] = full_text.replace(short_url, link)
+
+        # drop media URLs as we show a per-media detail page
+        for medium in message_dict.get("media", []):
+            full_text = message_dict["full_text"]
+            message_dict["full_text"] = full_text.replace(medium["url"], "").rstrip()
 
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
