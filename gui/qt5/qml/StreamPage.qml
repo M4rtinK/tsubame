@@ -53,31 +53,20 @@ BasePage {
                     anchors.rightMargin : rWin.c.style.main.spacing
                     spacing : rWin.c.style.main.spacing * 2.0
                     MessageHeader {
-                        name : "<b>" + messageUserName + "</b>"
-                        username : "@" + messageUserUsername
-                        avatarUrl : messageUserAvatarUrl
+                        message : messageData
                     }
-                    Label {
-                        width : messageDelegate.width - rWin.c.style.main.spacing * 2
-                        text : messageText
-                        wrapMode : Text.Wrap
-                        onLinkActivated : {
-                            rWin.log.info('message link clicked: ' + link)
-                            Qt.openUrlExternally(link)
-                        }
+                    MessageBody {
+                        message : messageData
                     }
-                    Label {
-                        width : messageDelegate.width - rWin.c.style.main.spacing * 2
-                        text : messageSourcePlaintext + " | " + messageDate
-                        wrapMode : Text.Wrap
-                        textFormat : Text.StyledText
+                    MessageOrigin {
+                        message : messageData
                     }
                     MediaGrid {
                         width : messageDelegate.width - rWin.c.style.main.spacing * 2
                         mediaList : messageData.media
                         spacing : rWin.c.style.main.spacing / 2.0
                     }
-                }
+               }
             }
         }
     }
@@ -93,14 +82,8 @@ BasePage {
     }
 
     function get_message_dict(message) {verticalCenter
-                 return {"messageUserName" : message.user.name,
-                         "messageUserUsername" : message.user.screen_name,
-                         "messageUserAvatarUrl" : message.user.profile_image_url,
-                         "messageText" : message.full_text,
-                         "messageDate" : message.created_at,
-                         "messageSourcePlaintext" : message.tsubame_message_source_plaintext,
-                         "messageData" : message,  // full type-specific dict describing the message
-                         }
+        // full type-specific dict describing the message
+        return {"messageData" : message}
     }
 
     function get_messages() {
