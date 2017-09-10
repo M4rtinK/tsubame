@@ -41,32 +41,19 @@ BasePage {
             delegate : ThemedBackgroundRectangle {
                 id : messageDelegate
                 width : streamLW.width
-                height : contentC.height + rWin.c.style.listView.itemBorder
+                height : messageC.height + rWin.c.style.listView.itemBorder
                 onClicked : {
                     rWin.log.info("message clicked: " + messageId)
                 }
-                Column {
-                    id : contentC
+                MessageContainer {
+                    id : messageC
+                    message : messageData
                     anchors.left : parent.left
                     anchors.leftMargin : rWin.c.style.main.spacing
-                    anchors.right : parent.left
-                    anchors.rightMargin : rWin.c.style.main.spacing
-                    spacing : rWin.c.style.main.spacing * 2.0
-                    MessageHeader {
-                        message : messageData
-                    }
-                    MessageBody {
-                        message : messageData
-                    }
-                    MessageOrigin {
-                        message : messageData
-                    }
-                    MediaGrid {
-                        width : messageDelegate.width - rWin.c.style.main.spacing * 2
-                        mediaList : messageData.media
-                        spacing : rWin.c.style.main.spacing / 2.0
-                    }
-               }
+                    // Explicit width seting is needed due to the MediaGrid
+                    // for some reason. We should probaly fix that.
+                    width : messageDelegate.width - rWin.c.style.main.spacing * 2
+                }
             }
         }
     }
