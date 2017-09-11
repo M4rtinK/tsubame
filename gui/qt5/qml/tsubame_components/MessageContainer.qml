@@ -43,20 +43,7 @@ Column {
     }
     ThemedBackgroundRectangle {
         width : messageContainer.width
-        height : messageOrigin.height + rWin.c.style.main.spacing * 2.0
-        MessageOrigin {
-            id : messageOrigin
-            anchors.top : parent.top
-            anchors.topMargin : rWin.c.style.main.spacing
-            anchors.left : parent.left
-            anchors.leftMargin : horizontalMargin
-            width : messageContainer.width - horizontalMargin * 2.0
-            message : messageContainer.message
-        }
-    }
-    ThemedBackgroundRectangle {
-        width : messageContainer.width
-        height : mediaGrid.height + rWin.c.style.main.spacing * 2.0
+        height : mediaGrid.visible ? mediaGrid.height + rWin.c.style.main.spacing * 2.0 : 0
         MediaGrid {
             id : mediaGrid
             anchors.top : parent.top
@@ -66,6 +53,19 @@ Column {
             width : messageContainer.width - horizontalMargin * 2.0
             mediaList : messageContainer.message.media
             spacing : rWin.c.style.main.spacing / 2.0
+        }
+    }
+    ThemedBackgroundRectangle {
+        width : messageContainer.width
+        height : messageOrigin.height + rWin.c.style.main.spacing * 2.0
+        MessageOrigin {
+            id : messageOrigin
+            anchors.top : parent.top
+            anchors.topMargin : rWin.c.style.main.spacing
+            anchors.left : parent.left
+            anchors.leftMargin : horizontalMargin
+            width : messageContainer.width - horizontalMargin * 2.0
+            message : messageContainer.message
         }
     }
 }
