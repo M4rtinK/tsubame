@@ -26,8 +26,8 @@ BasePage {
         }
     }
     content : ContentColumn {
-        anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
-        anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        //anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        //anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         ThemedListView {
             id : streamLW
             anchors.left : parent.left
@@ -42,17 +42,17 @@ BasePage {
                 id : messageDelegate
                 width : streamLW.width
                 height : messageC.height + rWin.c.style.listView.itemBorder
-                onClicked : {
-                    rWin.log.info("message clicked: " + messageId)
-                }
                 MessageContainer {
                     id : messageC
                     message : messageData
-                    anchors.left : parent.left
-                    anchors.leftMargin : rWin.c.style.main.spacing
-                    // Explicit width seting is needed due to the MediaGrid
-                    // for some reason. We should probaly fix that.
-                    width : messageDelegate.width - rWin.c.style.main.spacing * 2
+                    // Explicit width setting is needed due to the MediaGrid
+                    // for some reason. We should probably fix that.
+                    width : messageDelegate.width
+                    onMessageClicked : {
+                        rWin.log.info("message clicked")
+                        var messagePage = rWin.loadPage("MessagePage", {"message" : messageData})
+                        rWin.pushPageInstance(messagePage)
+                    }
                 }
             }
         }

@@ -6,7 +6,6 @@ import UC 1.0
 Row {
     property var message : null
     spacing : rWin.c.style.main.spacing * 1.5
-
     Image {
         id : userAvatar
         source : message.user.profile_image_url
@@ -27,7 +26,6 @@ Row {
             id : usernameLabel
             text : "@" + message.user.screen_name
         }
-
     }
 }
 
