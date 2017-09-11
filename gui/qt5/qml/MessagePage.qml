@@ -24,6 +24,7 @@ BasePage {
         MessageContainer {
             id : messageContainer
             message : messagePage.message
+            messageClickable : false
             // Explicit width setting is needed due to the MediaGrid
             // for some reason. We should probably fix that.
             width : messagePage.width - rWin.c.style.main.spacing * 2
