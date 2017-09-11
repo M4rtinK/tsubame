@@ -6,10 +6,18 @@ import "tsubame_components"
 
 BasePage {
     id : messagePage
-    // TODO: use something more useful in the header ?
-    headerText : qsTr("Tweet detail")
     property var message
-
+    headerText : qsTr("Tweet detail")
+    headerMenu : TopMenu {
+        MenuItem {
+            text: qsTr("Open in browser")
+            onClicked : {
+                rWin.log.info('opening Tweet in browser: ' + message)
+                var tweet_url = "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
+                Qt.openUrlExternally(tweet_url)
+            }
+        }
+    }
     content : ContentColumn {
         anchors.left : parent.left
         anchors.right : parent.right
