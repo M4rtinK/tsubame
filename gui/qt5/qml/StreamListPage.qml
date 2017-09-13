@@ -9,6 +9,7 @@ BasePage {
 
     headerText: qsTr("Message streams")
     backButtonVisible : false
+    property bool fetchingStreams : false
 
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
@@ -46,7 +47,9 @@ BasePage {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
-        text : "<h2>No message streams available.</h2>"
+        text : streamListPage.fetchingStreams ?
+               qsTr("<h2>Loading stream list.</h2>") :
+               qsTr("<h2>No message streams available.</h2>")
         visible : streamLW.model.count == 0
     }
 
@@ -58,12 +61,14 @@ BasePage {
     function reload_streams() {
         // reload the stream list from the Python backend
         rWin.log.info("loading message stream list")
+        streamListPage.fetchingStreams = true
         rWin.python.call("tsubame.gui.streams.get_stream_list", [], function(stream_list){
             streamLW.model.clear()
             for (var i=0; i<stream_list.length; i++) {
                 var stream = stream_list[i]
                 streamLW.model.append({"streamName" : stream.name})
             }
+            streamListPage.fetchingStreams = false
         })
     }
 }
