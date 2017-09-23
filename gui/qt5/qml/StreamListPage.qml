@@ -18,7 +18,7 @@ BasePage {
             id : streamLW
             anchors.left : parent.left
             anchors.right : parent.right
-            height : streamListPage.height
+            height : streamListPage.height - rWin.headerHeight
             model : ListModel {}
             delegate : ThemedBackgroundRectangle {
                 id : streamDelegate

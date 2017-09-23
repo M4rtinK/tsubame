@@ -33,7 +33,7 @@ BasePage {
             id : streamLW
             anchors.left : parent.left
             anchors.right : parent.right
-            height : streamPage.height
+            height : streamPage.height - rWin.headerHeight
             model : ListModel {}
             // The messages are ordered as oldest -> newest in the list
             // and we want to have the newest messages on the top of the
