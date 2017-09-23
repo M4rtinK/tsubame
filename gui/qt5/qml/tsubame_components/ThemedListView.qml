@@ -11,6 +11,5 @@ import UC 1.0
 PlatformListView {
     spacing : rWin.isDesktop ? rWin.c.style.listView.spacing/4 : rWin.c.style.listView.spacing
     clip : true
-    VerticalScrollDecorator {}
 }
 
