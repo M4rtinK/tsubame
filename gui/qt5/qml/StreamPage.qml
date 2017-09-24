@@ -27,8 +27,8 @@ BasePage {
         }
     }
     content : ContentColumn {
-        //anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
-        //anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
+        anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         ThemedListView {
             id : streamLW
             anchors.left : parent.left
