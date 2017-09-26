@@ -10,6 +10,12 @@ ApplicationWindow {
 
     title : "Tsubame"
 
+    Keys.onPressed: {
+         rWin.log.debug("MAIN WINDOW KEY PRESSED: " + event.key)
+    }
+
+    pageStack.focus : true
+
     property bool startupDone : false
     property bool firstPageLoaded : false
     onFirstPageLoadedChanged : {
@@ -211,6 +217,13 @@ ApplicationWindow {
 
     Item {
         id: rotator
+
+        focus : true
+        Keys.onPressed: {
+             rWin.log.debug("ROTATOR KEY PRESSED: " + event.key)
+             event.accepted = false
+        }
+
         // Why is this needed ?
         //
         // Because on some platforms, such as Sailfish OS with Silica components as a backend
