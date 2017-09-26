@@ -21,8 +21,8 @@ Page {
     property alias backButtonVisible : backButton.visible
     property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
-    property int bottomPadding : 0
-    property real availableHeight : parent.height - bottomPadding - headerHeight
+    //property int bottomPadding : 0
+    //property real availableHeight : parent.height - bottomPadding - headerHeight
     property alias isFlickable :  pageFlickable.interactive
     // TODO: reenable scroll decorator
     /*
@@ -31,6 +31,13 @@ Page {
          flickableItem: pageFlickable
     }
     */
+
+    focus : false
+
+    Keys.onPressed: {
+        rWin.log.debug("HEADER PAGE KEY PRESSED: " + event.key)
+        event.accept = false
+    }
 
     Rectangle {
         id : background

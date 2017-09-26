@@ -10,40 +10,6 @@ BasePage {
     property bool fetching_messages : false
     property bool refreshInProgress : false
     headerText : refreshInProgress ? qsTr("Refreshing...") : streamName
-    
-    Keys.onPressed :  {
-        var flick_ammount = 0
-        switch (event.key){
-            case Qt.Key_Up:
-                flick_ammount = -parent.height / 4.0
-                break
-            case Qt.Key_Down:
-                flick_ammount = parent.height / 4.0
-                break
-            case Qt.Key_PageUp:
-                flick_ammount = -parent.height
-                break
-            case Qt.Key_PageDown:
-                flick_ammount = parent.height
-                break
-            default:
-                flick_ammount = 0
-        }
-        rWin.log.debug(flick_ammount)
-        //streamLW.flick(0, flick_ammount)
-        streamLW.contentY = streamLW.contentY + flick_ammount
-
-        /*
-        if (event.key == Qt.Key_Up) {
-            console.log("UP")
-            streamLW.flick(0, 1000)
-        } else if (event.key == Qt.Key_Down) {
-            console.log("UP")
-            streamLW.flick(0, -1000)
-        }*/
-    
-    }
-    
     headerMenu : TopMenu {
         MenuItem {
             text: qsTr("Stream settings")
@@ -60,19 +26,15 @@ BasePage {
             }
         }
     }
-    content : ContentColumn {
+    content : Item {
+            anchors.top : parent.top
+            anchors.topMargin : rWin.c.style.main.spacing
+            anchors.left : parent.left
+            anchors.right : parent.right
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         ThemedListView {
             id : streamLW
-
-
-        Behavior on contentY{
-            NumberAnimation {
-                duration: 200
-                //easing.type: Easing.OutBounce
-            }
-        }
             anchors.left : parent.left
             anchors.right : parent.right
             height : streamPage.height - rWin.headerHeight
@@ -99,6 +61,27 @@ BasePage {
                 }
             }
         }
+        Item {
+            anchors.fill : parent
+            focus : true
+            Keys.onPressed: {
+                //rWin.log.debug("INCREMENTING CURRENT INDEX")
+                //currentIndex = 100
+                if (event.key == Qt.Key_Up || event.key == Qt.Key_Down) {
+                    if (event.key == Qt.Key_Up) {
+                        if (!streamLW.atYBeginning) {
+                            streamLW.flick(0, 1000)
+                        }
+                    }
+                    if (event.key == Qt.Key_Down) {
+                        if (!streamLW.atYEnd) {
+                            streamLW.flick(0, -1000)
+                        }
+                    }
+                }
+            }
+        }
+
     }
     Label {
         id : noStreamsLabel
