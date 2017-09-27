@@ -10,6 +10,8 @@ ApplicationWindow {
 
     title : "Tsubame"
 
+    pageStack.focus : true
+
     property bool startupDone : false
     property bool firstPageLoaded : false
     onFirstPageLoadedChanged : {
