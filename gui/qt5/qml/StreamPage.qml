@@ -26,6 +26,11 @@ BasePage {
             }
         }
     }
+    Keys.onPressed : {
+        if (event.key == Qt.Key_F5) {
+            refreshStream(streamName)
+        }
+    }
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
