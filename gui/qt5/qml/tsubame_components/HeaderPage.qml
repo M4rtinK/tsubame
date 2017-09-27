@@ -22,13 +22,6 @@ Page {
     property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
     property alias isFlickable :  pageFlickable.interactive
-    // TODO: reenable scroll decorator
-    /*
-    ScrollDecorator {
-         id: scrolldecorator
-         flickableItem: pageFlickable
-    }
-    */
 
     Rectangle {
         id : background
@@ -40,12 +33,10 @@ Page {
         id : pageFlickable
         anchors.fill: parent
         contentWidth: parent.width
-        //flickableDirection: Flickable.VerticalFlick
         VerticalScrollDecorator {}
         Item {
             id : contentField
             anchors.top : header.bottom
-            //height : childrenRect.height
             anchors.bottom : parent.bottom
             anchors.left : parent.left
             anchors.right : parent.right
@@ -79,13 +70,11 @@ Page {
         anchors.topMargin : (headerHeight - height) / 2.0
         anchors.leftMargin : rWin.c.style.main.spacingBig
         iconName : "left_thin.png"
-        //iconSource : "image://icons/"+ rWin.theme_id +"/back_small.png"
         opacity : pageFlickable.atYBeginning ? 1.0 : 0.55
         visible : rWin.showBackButton
         onClicked : {
             rWin.pageStack.pop(undefined, !rWin.animate)
         }
-
         onPressAndHold : {
             rWin.pageStack.pop(null, !rWin.animate)
         }
