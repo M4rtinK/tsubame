@@ -22,6 +22,7 @@ Page {
     property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
     property alias isFlickable :  pageFlickable.interactive
+    signal aboutToGoBack
 
     Rectangle {
         id : background
@@ -73,9 +74,11 @@ Page {
         opacity : pageFlickable.atYBeginning ? 1.0 : 0.55
         visible : rWin.showBackButton
         onClicked : {
+            aboutToGoBack()
             rWin.pageStack.pop(undefined, !rWin.animate)
         }
         onPressAndHold : {
+            aboutToGoBack()
             rWin.pageStack.pop(null, !rWin.animate)
         }
     }
@@ -83,9 +86,11 @@ Page {
         anchors.fill : parent
         acceptedButtons: Qt.BackButton
         onClicked: {
+            aboutToGoBack()
             rWin.pageStack.pop(undefined, !rWin.animate)
         }
         onPressAndHold : {
+            aboutToGoBack()
             rWin.pageStack.pop(null, !rWin.animate)
         }
     }
