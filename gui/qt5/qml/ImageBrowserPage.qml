@@ -10,7 +10,15 @@ BasePage {
     id: imageBrowser
     headerText : "Image " + (imageIndex + 1) + "/" + view.count
     headerVisible : false
-    headerMenu : customTopMenu
+    headerMenu : TopMenu {
+        id : customTopMenu
+        MenuItem {
+            text : qsTr("Download image")
+            onClicked : {
+                imageBrowser.downloadImage()
+            }
+        }
+    }
     property var mediaList : []
     property alias imageIndex : view.currentIndex
 
@@ -20,15 +28,6 @@ BasePage {
         anchors.left : parent.left
         anchors.right : parent.right
         anchors.bottom : parent.bottom
-        TopMenu {
-            id : customTopMenu
-            MenuItem {
-                text : qsTr("Download image")
-                onClicked : {
-                    imageBrowser.downloadImage()
-                }
-            }
-        }
         ThemedListView {
             id: view
             property real imageWidth: Math.max(imageBrowser.width, imageBrowser.height)
