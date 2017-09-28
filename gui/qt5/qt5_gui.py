@@ -263,9 +263,10 @@ class Streams(object):
         self._first_get_stream_list_run = False
         return stream_dict_list
 
-    def _process_twitter_message(self, message):
+    def _process_twitter_message(self, message, active_message_id=None):
         """Turn the twitter message to dict and apply any Tsubame related tweaks."""
         message_dict = message.AsDict()
+        matches_active_id = active_message_id and message_dict.get("id_str") == active_message_id
 
         # make normal URLs clickable
         for url in message_dict.get("urls", []):
@@ -282,7 +283,7 @@ class Streams(object):
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
         message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)
-        return message_dict
+        return message_dict, matches_active_id
 
     def get_stream_messages(self, stream_name, refresh=False):
         """Get a list of messages for stream identified by stream name."""
@@ -291,17 +292,27 @@ class Streams(object):
             if refresh:
                 stream.refresh()
             message_list = []
+            active_message_id = None
+            match_index = None
+            if stream.active_message_id:
+                stream_type = stream.active_message_id.split("_")[0]
+                if stream_type == constants.MessageType.TWEET.value:
+                    active_message_id = stream.active_message_id.split("_")[1]
             for message in stream.messages:
                 if isinstance(message, twitter.Status):
-                   message_list.append(self._process_twitter_message(message))
+                   message_dict, match = self._process_twitter_message(message, active_message_id)
+                   message_list.append(message_dict)
+                   if match:
+                       match_index = len(message_list)-1
+
                     #log.debug("MESSAGE")
                     #log.debug(message)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
-            return message_list
+            return [message_list, match_index]
         else:
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
-            return []
+            return [[], None]
 
     def refresh_stream(self, stream_name):
         """Get a message stream identified by stream name."""
@@ -311,17 +322,36 @@ class Streams(object):
             new_messages = stream.refresh()
             for message in new_messages:
                 if isinstance(message, twitter.Status):
-                    message_list.append(self._process_twitter_message(message))
+                    message_dict, _match = self._process_twitter_message(message)
+                    message_list.append(message_dict)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
             return message_list
         else:
+            self.gui.log.error("Can't refresh stream.")
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
             return []
 
     def delete_stream(self, stream_name):
         """Try to delete a stream by name."""
         return stream_module.stream_manager.delete_stream(stream_name)
+
+    def set_stream_active_message(self, stream_name, message_data):
+        """Set active message id for a stream."""
+        message_type = message_data.get("tsubame_message_type")
+        if message_type == constants.MessageType.TWEET.value:
+            message_id = message_data["id_str"]
+            stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+            if stream:
+                stream.active_message_id = "%s_%s" % (message_type, message_id)
+                stream.save(commit=True)
+            else:
+                self.gui.log.error("Can't set active message id for stream.")
+                self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
+                return []
+        else:
+            self.gui.log.error("Can't set active message id - unknown message type: %s", message_type)
+
 
 class Search(object):
     """An easy to use search interface for the QML context."""

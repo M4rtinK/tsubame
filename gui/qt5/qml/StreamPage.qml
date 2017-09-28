@@ -31,6 +31,33 @@ BasePage {
             refreshStream(streamName)
         }
     }
+    // save active message when the user exists the page
+    onAboutToGoBack : {
+        saveActiveMessageTimer.running = false
+        saveActiveMessage()
+    }
+    // use a timer to batch active message saving requests
+    // (we need to do this periodically as various quit/destroyed
+    //  signals are not very reliable and it's always possible
+    //  to get hard crash or hard kill/OOM kill)
+    Timer {
+        id : saveActiveMessageTimer
+        interval : 1000
+        repeat : false
+        running : false
+        onTriggered : {
+            saveActiveMessage()
+        }
+    }
+    function saveActiveMessage() {
+        rWin.log.debug(new_date - lastSavedActiveMessage)
+        var modelIndex = streamLW.indexAt(0, streamLW.contentY)
+        if (modelIndex != null) {
+            rWin.log.info("saving stream index: " + modelIndex)
+            var data = streamLW.model.get(modelIndex).messageData
+            rWin.python.call("tsubame.gui.streams.set_stream_active_message", [streamName, data], function(){})
+        }
+    }
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
@@ -44,6 +71,12 @@ BasePage {
             // and we want to have the newest messages on the top of the
             // list view. So use the bottom-to-top layout direction.
             verticalLayoutDirection : ListView.BottomToTop
+            onMovementEnded : {
+                // save active message a while after last list
+                // via timer to avoid backend spamming
+                // TODO: also save after relevant key presses
+                saveActiveMessageTimer.restart()
+            }
             delegate : ThemedBackgroundRectangle {
                 id : messageDelegate
                 width : streamLW.width
@@ -89,13 +122,21 @@ BasePage {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
         streamPage.fetchingMessages = true
-        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(message_list){
+        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(result){
+            var message_list = result[0]
+            var match_index = result[1]
             streamLW.model.clear()
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
             }
             streamPage.fetchingMessages = false
-            streamLW.positionViewAtEnd()
+            if (match_index != null) {
+                rWin.log.info("restoring stream position to index: " + match_index)
+                streamLW.positionViewAtIndex(match_index, ListView.Beginning)
+            } else {
+                rWin.log.info("setting stream position: end")
+                streamLW.positionViewAtEnd()
+            }
         })
     }
 
