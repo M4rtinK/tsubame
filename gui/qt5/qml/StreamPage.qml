@@ -7,7 +7,7 @@ import "tsubame_components"
 BasePage {
     id : streamPage
     property string streamName : ""
-    property bool fetching_messages : false
+    property bool fetchingMessages : false
     property bool refreshInProgress : false
     headerText : refreshInProgress ? qsTr("Refreshing...") : streamName
     headerMenu : TopMenu {
@@ -67,8 +67,14 @@ BasePage {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
-        text : fetching_messages ? qsTr("<h2>No messages available.</h2>") : qsTr("<h2>Fetching messages.</h2>")
-        visible : streamLW.model.count == 0
+        text : qsTr("<h2>No messages available.</h2>")
+        visible : streamLW.model.count == 0 && !streamPage.fetchingMessages
+    }
+    BusyIndicator {
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        visible : streamPage.fetchingMessages
+        running : streamPage.fetchingMessages
     }
     onStreamNameChanged : {
         get_messages()
@@ -82,12 +88,13 @@ BasePage {
     function get_messages() {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
+        streamPage.fetchingMessages = true
         rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(message_list){
             streamLW.model.clear()
-            fetching_messages = true
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
             }
+            streamPage.fetchingMessages = false
             streamLW.positionViewAtEnd()
         })
     }

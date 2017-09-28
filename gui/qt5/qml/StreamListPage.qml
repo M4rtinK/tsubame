@@ -47,12 +47,15 @@ BasePage {
         id : noStreamsLabel
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
-        text : streamListPage.fetchingStreams ?
-               qsTr("<h2>Loading stream list.</h2>") :
-               qsTr("<h2>No message streams available.</h2>")
-        visible : streamLW.model.count == 0
+        text : qsTr("<h2>No message streams available.</h2>")
+        visible : streamLW.model.count == 0 && !streamListPage.fetchingStreams
     }
-
+    BusyIndicator {
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        visible : streamListPage.fetchingStreams
+        running : streamListPage.fetchingStreams
+    }
     Component.onCompleted : {
         // get streams from the Python backend
         reload_streams()
