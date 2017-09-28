@@ -337,7 +337,8 @@ class MessageStream(TsubamePersistentBase):
         "name" : "",
         "description" : "",
         "input_group" : None,
-        "filter_group" : None
+        "filter_group" : None,
+        "active_message_id" : None
     }
 
     @classmethod
@@ -402,6 +403,14 @@ class MessageStream(TsubamePersistentBase):
     @property
     def filters(self):
         return self._filter_group
+
+    @property
+    def active_message_id(self):
+        return self.data.active_message_id
+
+    @active_message_id.setter
+    def active_message_id(self, message_id):
+        self.data.active_message_id = message_id
 
     def refresh(self):
         new_messages = self._do_refresh()
