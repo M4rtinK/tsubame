@@ -50,7 +50,6 @@ BasePage {
         }
     }
     function saveActiveMessage() {
-        rWin.log.debug(new_date - lastSavedActiveMessage)
         var modelIndex = streamLW.indexAt(0, streamLW.contentY)
         if (modelIndex != null) {
             rWin.log.info("saving stream index: " + modelIndex)
