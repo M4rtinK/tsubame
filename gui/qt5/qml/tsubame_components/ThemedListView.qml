@@ -19,6 +19,11 @@ PlatformListView {
 
     property real flickStartY : 0
 
+    // move by small amount (up/down arrow)
+    property real smallMove : themedListView.height / 4.0
+    // move by whole "page", corresponding to visible content (page up/page down)
+    property real pageMove : themedListView.height
+
     Behavior on contentY{
         enabled : true
         id : yBehaviour
@@ -33,39 +38,37 @@ PlatformListView {
    Keys.onPressed: {
         priority : Keys.BeforeItem
         rWin.log.debug("listview KEY PRESSED: " + event.text)
-        var flick_amount = 0
+        var move_amount = 0
         switch (event.key) {
             case Qt.Key_Up:
-                flick_amount = -themedListView.height / 4.0
-                //flick_amount = -100
+                move_amount = -smallMove
                 event.accepted = true
                 break
             case Qt.Key_Down:
-                flick_amount = themedListView.height / 4.0
-                flick_amount = 100
+                move_amount = smallMove
                 event.accepted = true
                 break
             case Qt.Key_PageUp:
-                flick_amount = -themedListView.height
+                move_amount = -pageMove
                 event.accepted = true
                 break
             case Qt.Key_PageDown:
-                flick_amount = themedListView.height
+                move_amount = pageMove
                 event.accepted = true
                 break
             default:
-                flick_amount = 0
+                move_amount = 0
         }
-        var newContentY = contentY + flick_amount
+        var newContentY = contentY + move_amount
 
-        if (flick_amount > 0) {
+        if (move_amount > 0) {
             if (!themedListView.atYEnd) {
                 themedListView.contentY = newContentY
             } else {
                 themedListView.flick(0, -1)
             }
 
-        } else if (flick_amount <0) {
+        } else if (move_amount <0) {
             if (!themedListView.atYBeginning) {
                 themedListView.contentY = newContentY
             } else {
