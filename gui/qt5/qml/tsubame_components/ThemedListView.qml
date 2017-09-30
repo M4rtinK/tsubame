@@ -14,31 +14,32 @@ PlatformListView {
     clip : true
     focus : true
     currentIndex : -1
-    property int customIndex : 0
-    property real oldFlickDeceleration : 0
-
-    property real flickStartY : 0
-
     // move by small amount (up/down arrow)
     property real smallMove : themedListView.height / 4.0
     // move by whole "page", corresponding to visible content (page up/page down)
     property real pageMove : themedListView.height
-
+    // smoothly animate the custom contentY changes during (custom) keyboard navigation
     Behavior on contentY{
         enabled : true
         id : yBehaviour
-        NumberAnimation {
+        SmoothedAnimation {
             id : scrollAnimation
             duration: 200
             onRunningChanged : {
+                yBehaviour.enabled = false
                 themedListView.flick(0, 0)
             }
         }
     }
-   Keys.onPressed: {
+    Keys.onPressed: {
         priority : Keys.BeforeItem
-        rWin.log.debug("listview KEY PRESSED: " + event.text)
         var move_amount = 0
+        // We set event.accept == true so that the up and down
+        // event will not be forwarded to the default handlers
+        // that attempt to move the highlight and change the
+        // current index property and we don't want that as
+        // it clashes with the custom keyboard navigation an
+        // manual list view panning.
         switch (event.key) {
             case Qt.Key_Up:
                 move_amount = -smallMove
@@ -60,16 +61,16 @@ PlatformListView {
                 move_amount = 0
         }
         var newContentY = contentY + move_amount
-
         if (move_amount > 0) {
             if (!themedListView.atYEnd) {
+                yBehaviour.enabled = true
                 themedListView.contentY = newContentY
             } else {
                 themedListView.flick(0, -1)
             }
-
         } else if (move_amount <0) {
             if (!themedListView.atYBeginning) {
+                yBehaviour.enabled = true
                 themedListView.contentY = newContentY
             } else {
                 themedListView.flick(0, 1)
@@ -77,4 +78,3 @@ PlatformListView {
         }
     }
 }
-
