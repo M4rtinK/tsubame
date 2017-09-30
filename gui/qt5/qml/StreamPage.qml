@@ -32,9 +32,11 @@ BasePage {
         }
     }
     // save active message when the user exists the page
-    onAboutToGoBack : {
-        saveActiveMessageTimer.running = false
-        saveActiveMessage()
+    onIsActiveChanged : {
+        if (!isActive) {
+            saveActiveMessageTimer.running = false
+            saveActiveMessage()
+        }
     }
     // use a timer to batch active message saving requests
     // (we need to do this periodically as various quit/destroyed
