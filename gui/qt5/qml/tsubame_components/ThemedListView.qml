@@ -57,6 +57,14 @@ PlatformListView {
                 move_amount = pageMove
                 event.accepted = true
                 break
+            case Qt.Key_Home:
+                positionViewAtEnd()
+                event.accepted = true
+                break
+            case Qt.Key_End:
+                positionViewAtBeginning()
+                event.accepted = true
+                break
             default:
                 move_amount = 0
         }
@@ -68,7 +76,7 @@ PlatformListView {
             } else {
                 themedListView.flick(0, -1)
             }
-        } else if (move_amount <0) {
+        } else if (move_amount < 0) {
             if (!themedListView.atYBeginning) {
                 yBehaviour.enabled = true
                 themedListView.contentY = newContentY
