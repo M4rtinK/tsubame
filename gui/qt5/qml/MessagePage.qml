@@ -29,5 +29,16 @@ BasePage {
             // for some reason. We should probably fix that.
             width : messagePage.width - rWin.c.style.main.spacing * 2
         }
+        Row {
+            spacing : rWin.c.style.main.spacing
+            Label {
+                visible : messagePage.message.retweet_count != null
+                text: "<b>" +  messagePage.message.retweet_count + "</b> " + qsTr("Retweets")
+            }
+            Label {
+                visible : messagePage.message.favorite_count != null
+                text: "<b>" +  messagePage.message.favorite_count + "</b> " + qsTr("Favorites")
+            }
+        }
     }
 }
