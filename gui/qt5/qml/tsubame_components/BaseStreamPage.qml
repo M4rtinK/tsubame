@@ -1,24 +1,22 @@
-//StreamPage.qml
+//BaseStreamPage.qml
+//
+// A base element for message stream pages.
+//
+// Turns out there is quite a bit of common functionality
+// that can be reused when implementing specialized
+// message stream pages (named message streams, hashtags,
+// user messages, arbitrary user favorites, arbitrary list etc.)
 
 import QtQuick 2.0
 import UC 1.0
-import "tsubame_components"
 
 BasePage {
-    id : streamPage
+    id : baseStreamPage
     property string streamName : ""
     property bool fetchingMessages : false
     property bool refreshInProgress : false
     headerText : refreshInProgress ? qsTr("Refreshing...") : streamName
     headerMenu : TopMenu {
-        MenuItem {
-            text: qsTr("Stream settings")
-            onClicked : {
-                var streamSettingsPage = rWin.loadPage("StreamSettingsPage")
-                streamSettingsPage.streamName = streamName
-                rWin.pushPageInstance(streamSettingsPage)
-            }
-        }
         MenuItem {
             text : qsTr("Refresh")
             onClicked : {
@@ -31,34 +29,6 @@ BasePage {
             refreshStream(streamName)
         }
     }
-    // save active message when the user exists the page
-    onIsActiveChanged : {
-        if (!isActive) {
-            saveActiveMessageTimer.running = false
-            saveActiveMessage()
-        }
-    }
-    // use a timer to batch active message saving requests
-    // (we need to do this periodically as various quit/destroyed
-    //  signals are not very reliable and it's always possible
-    //  to get hard crash or hard kill/OOM kill)
-    Timer {
-        id : saveActiveMessageTimer
-        interval : 1000
-        repeat : false
-        running : false
-        onTriggered : {
-            saveActiveMessage()
-        }
-    }
-    function saveActiveMessage() {
-        var modelIndex = streamLW.indexAt(0, streamLW.contentY)
-        if (modelIndex != null) {
-            rWin.log.info("saving stream index: " + modelIndex)
-            var data = streamLW.model.get(modelIndex).messageData
-            rWin.python.call("tsubame.gui.streams.set_stream_active_message", [streamName, data], function(){})
-        }
-    }
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
@@ -66,7 +36,7 @@ BasePage {
             id : streamLW
             anchors.left : parent.left
             anchors.right : parent.right
-            height : streamPage.height - rWin.headerHeight
+            height : baseStreamPage.height - rWin.headerHeight
             model : ListModel {}
             // The messages are ordered as oldest -> newest in the list
             // and we want to have the newest messages on the top of the
@@ -102,15 +72,18 @@ BasePage {
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
         text : qsTr("<h2>No messages available.</h2>")
-        visible : streamLW.model.count == 0 && !streamPage.fetchingMessages
+        visible : streamLW.model.count == 0 && !baseStreamPage.fetchingMessages
     }
     BusyIndicator {
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
-        visible : streamPage.fetchingMessages
-        running : streamPage.fetchingMessages
+        visible : baseStreamPage.fetchingMessages
+        running : baseStreamPage.fetchingMessages
     }
     onStreamNameChanged : {
+        // Only fetch initial messages once the stream name is set.
+        // This is important because for temporary streams as the stream
+        // might not yet exists when the stream page is instantiated.
         get_messages()
     }
 
@@ -122,7 +95,7 @@ BasePage {
     function get_messages() {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
-        streamPage.fetchingMessages = true
+        baseStreamPage.fetchingMessages = true
         rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(result){
             var message_list = result[0]
             var match_index = result[1]
@@ -130,7 +103,7 @@ BasePage {
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
             }
-            streamPage.fetchingMessages = false
+            baseStreamPage.fetchingMessages = false
             if (match_index != null) {
                 rWin.log.info("restoring stream position to index: " + match_index)
                 streamLW.positionViewAtIndex(match_index, ListView.Beginning)

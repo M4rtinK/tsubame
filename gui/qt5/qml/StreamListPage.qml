@@ -26,7 +26,7 @@ BasePage {
                 height : contentC.height + rWin.c.style.listView.itemBorder
                 onClicked : {
                     rWin.log.info("stream clicked: " + streamName)
-                    var streamPage = rWin.loadPage("StreamPage")
+                    var streamPage = rWin.loadPage("NamedStreamPage")
                     streamPage.streamName = streamName
                     rWin.pushPageInstance(streamPage)
                 }
