@@ -263,7 +263,6 @@ ApplicationWindow {
             id : startupLabel
             anchors.horizontalCenter : parent.horizontalCenter
             anchors.verticalCenter : parent.verticalCenter
-            font.pixelSize : 32
             text: "<b>starting Tsubame...</b>"
             horizontalAlignment : Text.AlignHCenter
             verticalAlignment : Text.AlignVCenter
