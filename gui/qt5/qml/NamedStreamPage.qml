@@ -50,10 +50,10 @@ BaseStreamPage {
         }
     }
     function saveActiveMessage() {
-        var modelIndex = streamLW.indexAt(0, streamLW.contentY)
+        var modelIndex = namedStreamPage.indexAt(namedStreamPage.contentY)
         if (modelIndex != null) {
             rWin.log.info("saving stream index: " + modelIndex)
-            var data = streamLW.model.get(modelIndex).messageData
+            var data = namedStreamPage.getItem(modelIndex).messageData
             rWin.python.call("tsubame.gui.streams.set_stream_active_message", [streamName, data], function(){})
         }
     }

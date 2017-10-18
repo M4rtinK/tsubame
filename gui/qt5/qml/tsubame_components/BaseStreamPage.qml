@@ -15,6 +15,7 @@ BasePage {
     property string streamName : ""
     property bool fetchingMessages : false
     property bool refreshInProgress : false
+    property alias contentY : streamLW.contentY
     headerText : refreshInProgress ? qsTr("Refreshing...") : streamName
     headerMenu : TopMenu {
         MenuItem {
@@ -24,12 +25,22 @@ BasePage {
             }
         }
     }
+
+    function indexAt(index) {
+        return streamLW.indexAt(0, index)
+    }
+
+    function getItem(index) {
+        return streamLW.model.get(index)
+    }
+
     Keys.onPressed : {
         if (event.key == Qt.Key_F5) {
             refreshStream(streamName)
         }
     }
     content : ContentColumn {
+        id : streamContent
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         ThemedListView {
