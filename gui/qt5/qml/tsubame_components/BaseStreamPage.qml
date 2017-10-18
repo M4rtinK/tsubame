@@ -128,7 +128,7 @@ BasePage {
     function refreshStream() {
         // reload the stream list from the Python backend
         rWin.log.info("refreshing stream " + streamName)
-        streamPage.refreshInProgress = true
+        baseStreamPage.refreshInProgress = true
         rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName], function(message_list){
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
@@ -139,7 +139,7 @@ BasePage {
             } else {
                 rWin.notify(qsTr("No new messages found."), 2000)
             }
-        streamPage.refreshInProgress = false
+        baseStreamPage.refreshInProgress = false
         })
     }
 }
