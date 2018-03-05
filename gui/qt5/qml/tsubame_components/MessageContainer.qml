@@ -6,7 +6,7 @@ import UC 1.0
 Column {
     id : messageContainer
     property var message
-    signal messageHeaderClicked
+    signal userInfoClicked
     signal messageClicked
     // actually more than just the message - basically everything than the header
     property bool messageClickable : true
@@ -26,7 +26,7 @@ Column {
             user : messageContainer.message.user
         }
         onClicked : {
-            messageContainer.messageHeaderClicked()
+            messageContainer.userInfoClicked()
         }
     }
     ThemedBackgroundRectangle {
