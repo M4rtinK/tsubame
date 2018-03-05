@@ -16,14 +16,14 @@ Column {
         pressed_override : bodyTBR.pressed || mediaTBR.pressed || originTBR.pressed
         width : messageContainer.width
         height : messageHeader.height + rWin.c.style.main.spacing * 2.0
-        MessageHeader {
+        UserInfo {
             id : messageHeader
             anchors.top : parent.top
             anchors.topMargin : rWin.c.style.main.spacing
             anchors.left : parent.left
             anchors.leftMargin : horizontalMargin
             width : messageContainer.width - horizontalMargin * 2.0
-            message : messageContainer.message
+            user : messageContainer.message.user
         }
         onClicked : {
             messageContainer.messageHeaderClicked()
