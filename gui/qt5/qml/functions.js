@@ -76,6 +76,12 @@ function p2pDistanceString(point1, point2) {
    return formatDistance(getDistanceTo(lat1, lon1, lat2, lon2), 1)
 }
 
+function makeTextClickable(inputString) {
+    // make Twitter related things & URLs clickable in a piece of text
+    return inputString.replace(/(@\w+)|(#\w+)|(http\S+)/g,'<a href="$&">$&</a>')
+}
+
+
 String.prototype.trunc =
      function(n,useWordBoundary){
          var toLong = this.length>n,
