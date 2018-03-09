@@ -44,7 +44,7 @@ BasePage {
                 id : descriptionLabel
                 anchors.verticalCenter : parent.verticalCenter
                 anchors.horizontalCenter : parent.horizontalCenter
-                text : (userPage.user.description  != null) ? F.makeTextClickable(userPage.user.description) : ""
+                text : (userPage.user.description  != null) ? F.makeTextClickable(userPage.user.description, true) : ""
                 width : parent.width - rWin.c.style.main.spacing * 2
                 wrapMode : Text.Wrap
                 textFormat : Text.StyledText
