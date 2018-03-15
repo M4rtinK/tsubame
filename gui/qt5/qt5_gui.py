@@ -300,10 +300,10 @@ class Streams(object):
                     active_message_id = stream.active_message_id.split("_")[1]
             for message in stream.messages:
                 if isinstance(message, twitter.Status):
-                   message_dict, match = self._process_twitter_message(message, active_message_id)
-                   message_list.append(message_dict)
-                   if match:
-                       match_index = len(message_list)-1
+                    message_dict, match = self._process_twitter_message(message, active_message_id)
+                    message_list.append(message_dict)
+                    if match:
+                        match_index = len(message_list)-1
 
                     #log.debug("MESSAGE")
                     #log.debug(message)
