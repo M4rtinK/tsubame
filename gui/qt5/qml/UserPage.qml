@@ -86,5 +86,15 @@ BasePage {
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("Favorites") + "</b><br>" + userPage.user.favourites_count
         }
+        ThemedTextRectangle {
+            width : parent.width
+            height : userTBR.height
+            visible : userPage.user.url != null
+            label.horizontalAlignment : Text.AlignHCenter
+            label.text : "<b>URL:</b> " + userPage.user.url
+            onClicked : {
+                Qt.openUrlExternally(userPage.user.url)
+            }
+        }
     }
 }
