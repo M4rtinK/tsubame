@@ -7,13 +7,9 @@ import "functions.js" as F
 
 BasePage {
     id : userPage
-
     property var user
-
     headerText : "@" + user.screen_name
-
     property real horizontalMargin : rWin.c.style.main.spacing
-
     content : ContentColumn {
         anchors.left : parent.left
         anchors.right : parent.right
@@ -48,11 +44,6 @@ BasePage {
                 width : parent.width - rWin.c.style.main.spacing * 2
                 wrapMode : Text.Wrap
                 textFormat : Text.StyledText
-                /*
-                function makeTextClickable(inputString) {
-                    // make Twitter related things & URLs clickable in a piece of text
-                    return inputString.replace(/(@\w+)|(#\w+)|(http\S+)/g,'<a href="$&">$&</a>')
-                }*/
                 onLinkActivated : {
                     rWin.log.info('user description link clicked: ' + link)
                     if (link.startsWith("@")) {  // username
@@ -65,52 +56,35 @@ BasePage {
                 }
             }
         }
-
         Row {
             id : userItemsRow
             width : parent.width
             spacing : rWin.c.style.main.spacing
-            property int itemWidth : (width - 3 * spacing) / 4.0
-            ThemedBackgroundRectangle {
+            property int itemWidth : (width - 2 * spacing) / 3.0
+            ThemedTextRectangle {
                 width : userItemsRow.itemWidth
                 height : userTBR.height
-                Label {
-                    anchors.verticalCenter : parent.verticalCenter
-                    anchors.horizontalCenter : parent.horizontalCenter
-                    text : qsTr("Tweets")
-                    font.bold : true
-                }
+                label.horizontalAlignment : Text.AlignHCenter
+                label.text : "<b>" + qsTr("Tweets") + "</b><br>" + userPage.user.statuses_count
             }
-            ThemedBackgroundRectangle {
+            ThemedTextRectangle {
                 width : userItemsRow.itemWidth
                 height : userTBR.height
-                Label {
-                    anchors.verticalCenter : parent.verticalCenter
-                    anchors.horizontalCenter : parent.horizontalCenter
-                    text : qsTr("Followers")
-                    font.bold : true
-                }
+                label.horizontalAlignment : Text.AlignHCenter
+                label.text : "<b>" + qsTr("Following") + "</b><br>" + userPage.user.friends_count
             }
-            ThemedBackgroundRectangle {
+            ThemedTextRectangle {
                 width : userItemsRow.itemWidth
                 height : userTBR.height
-                Label {
-                    anchors.verticalCenter : parent.verticalCenter
-                    anchors.horizontalCenter : parent.horizontalCenter
-                    text : qsTr("Following")
-                    font.bold : true
-                }
+                label.horizontalAlignment : Text.AlignHCenter
+                label.text : "<b>" + qsTr("Followers") + "</b><br>" +  + userPage.user.followers_count
             }
-            ThemedBackgroundRectangle {
-                width : userItemsRow.itemWidth
-                height : userTBR.height
-                Label {
-                    anchors.verticalCenter : parent.verticalCenter
-                    anchors.horizontalCenter : parent.horizontalCenter
-                    text : qsTr("Lists")
-                    font.bold : true
-                }
-            }
+        }
+        ThemedTextRectangle {
+            width : parent.width
+            height : userTBR.height
+            label.horizontalAlignment : Text.AlignHCenter
+            label.text : "<b>" + qsTr("Favorites") + "</b><br>" + userPage.user.favourites_count
         }
     }
 }
