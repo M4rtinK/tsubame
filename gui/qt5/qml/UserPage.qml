@@ -91,10 +91,32 @@ BasePage {
             height : userTBR.height
             visible : userPage.user.url != null
             label.horizontalAlignment : Text.AlignHCenter
-            label.text : "<b>URL:</b> " + userPage.user.url
+            label.text : "<b>" + qsTr("URL") + ":</b> " + userPage.user.url
             onClicked : {
                 Qt.openUrlExternally(userPage.user.url)
             }
         }
+        ThemedTextRectangle {
+            width : parent.width
+            height : userTBR.height
+            visible : userPage.user.location != null
+            label.horizontalAlignment : Text.AlignHCenter
+            label.text : "<b>" + qsTr("location") +":</b> " + userPage.user.location
+            onClicked : {
+                Qt.openUrlExternally(userPage.user.url)
+            }
+        }
+        ThemedTextRectangle {
+            width : parent.width
+            height : userTBR.height
+            visible : userPage.user.time_zone != null
+            label.horizontalAlignment : Text.AlignHCenter
+            label.text : "<b>" + qsTr("timezone") + ":</b> " + userPage.user.time_zone
+            onClicked : {
+                Qt.openUrlExternally(userPage.user.url)
+            }
+        }
+
+
     }
 }
