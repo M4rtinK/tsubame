@@ -36,6 +36,13 @@ BaseStreamPage {
             saveActiveMessage()
         }
     }
+    onListViewMovementEnded : {
+         // save active message a while after last list
+        // via timer to avoid backend spamming
+        // TODO: also save after relevant key presses
+        saveActiveMessageTimer.restart()
+    }
+
     // use a timer to batch active message saving requests
     // (we need to do this periodically as various quit/destroyed
     //  signals are not very reliable and it's always possible

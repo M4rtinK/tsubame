@@ -21,6 +21,7 @@ BasePage {
     property bool fetchingMessages : false
     property bool refreshInProgress : false
     property alias contentY : streamLW.contentY
+    signal listViewMovementEnded
     headerText : refreshInProgress ? qsTr("Refreshing...") : idleStateHeaderText
     headerMenu : TopMenu {
         MenuItem {
@@ -59,10 +60,9 @@ BasePage {
             // list view. So use the bottom-to-top layout direction.
             verticalLayoutDirection : ListView.BottomToTop
             onMovementEnded : {
-                // save active message a while after last list
-                // via timer to avoid backend spamming
-                // TODO: also save after relevant key presses
-                saveActiveMessageTimer.restart()
+                // trigger the top-level signal so that listeners
+                // (such ase stream position saving) can react
+                baseStreamPage.listViewMovementEnded()
             }
             delegate : ThemedBackgroundRectangle {
                 id : messageDelegate
