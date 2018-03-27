@@ -70,7 +70,19 @@ class ApiManager(TsubameBase):
             self._twitter_api_dict[account_username] = api
         return api
 
+    def get_an_api_username(self):
+        """Get an arbitrary Twitter API username.
 
+        This is generally used to get an API for retrieving data for temporary message streams.
+
+        Eventually we most likely either want to make:
+        - track message API source per message
+        - make default account for temporary streams configurable
+        """
+        if self._twitter_api_dict:
+            return list(self._twitter_api_dict.keys()).pop()
+        else:
+            return TwitterAccountForAPINotFound
 
 def initialize_api_manager(account_manager, twitter_consumer_key, twitter_consumer_secret):
     global api_manager
