@@ -260,7 +260,9 @@ class TwitterUserTweets(TwitterMessageSource):
         return self.data.source_username
 
     def _do_refresh(self):
-        return self.api.GetUserTimeline(screen_name=self.source_username, since_id=self.latest_message_id)
+        return self.api.GetUserTimeline(screen_name=self.source_username,
+                                        since_id=self.latest_message_id,
+                                        count=200)
 
 
 class TwitterUserFavouritesData(blitzdb.Document):
@@ -351,7 +353,9 @@ class TwitterHashtagTweets(TwitterMessageSource):
 
     def _do_refresh(self):
         term = "#%s" % self.hashtag
-        return self.api.GetSearch(term=term, since_id=self.latest_message_id)
+        return self.api.GetSearch(term=term,
+                                  since_id=self.latest_message_id,
+                                  count=200)
 
 class MessageStreamData(blitzdb.Document):
     pass
