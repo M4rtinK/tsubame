@@ -13,14 +13,11 @@ Label {
     textFormat : Text.StyledText
     onLinkActivated : {
         rWin.log.info('message link clicked: ' + link)
-        if (link.startsWith("@")) {  // username
+        if (link.substring(0, 1) == "@") {  // username
             rWin.log.debug("username")
-        } else if (link.startsWith("#")) {  //hashtag
+        } else if (link.substring(0, 1) == "#") {  //hashtag
             var hashtagPage = rWin.loadPage("HashtagStreamPage")
-            rWin.log.debug("CREATE HASHTAG PAGE")
             hashtagPage.hashtag = link.substring(1)
-            rWin.log.debug(hashtagPage.hashtag)
-            rWin.log.debug(link.substring(1))
             rWin.pushPageInstance(hashtagPage)
         } else {  // URL
             Qt.openUrlExternally(link)
