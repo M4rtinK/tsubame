@@ -21,17 +21,21 @@ import os
 import re
 
 import pyotherside
+import blitzdb
 
 import threading
 import twitter
 import re
+import tempfile
 
 from core import constants
 from core.threads import threadMgr
 from core import utils
 from core import tsubame_log
 from core import stream as stream_module
+from core import api as api_module
 from core import download
+from core.signal import Signal
 from gui.gui_base import GUI
 
 REMOVE_HTML_RE = re.compile('<[^<]+?>')
@@ -59,6 +63,8 @@ class Qt5GUI(GUI):
 
         # we handle notifications by forwarding them to the QML context
         self.tsubame.notification_triggered.connect(self._dispatch_notification_cb)
+
+        self.shutdown = Signal()
 
         # register exit handler
         #pyotherside.atexit(self._shutdown)
@@ -120,6 +126,9 @@ class Qt5GUI(GUI):
         self.log.info("Qt 5 GUI module shutting down")
         # save options, just in case
         self._save_options()
+        # trigger the shutdown signal
+        self.shutdown()
+
         # tell the main class instance
         self.tsubame.shutdown()
 
@@ -239,11 +248,49 @@ class Streams(object):
 
     def __init__(self, gui):
         self.gui = gui
-        # prevent the stream list populat from running if this is not the initial
-        # get_stream_list() call
+
+        # connect to the shutdown signal for cleanup purposes
+        self.gui.shutdown.connect(self._shutdown)
+
+        # temporary BlitzDB instance
+        self._tempdir = tempfile.TemporaryDirectory()
+        db_tempfile = os.path.join(self._tempdir.name, "temp.db")
+        self.gui.log.debug("creating temp db in: %s", db_tempfile)
+        self._temp_db = blitzdb.FileBackend(db_tempfile)
+
+        # prevent the stream list populate from running if this is not the initial
+        # get_named_stream_list() call
         self._first_get_stream_list_run = True
 
-    def get_stream_list(self):
+        self._temporary_streams = {}
+        self._temporary_stream_id = -1
+        self._temporary_stream_id_lock = threading.RLock()
+
+        self._temp_stream_api_username = None
+
+    @property
+    def temp_stream_api_username(self):
+        # one of the accounts for fetching data for temporary streams
+        # TODO: make this configurable
+        if not self._temp_stream_api_username:
+            self._temp_stream_api_username = api_module.api_manager.get_an_api_username()
+            self.gui.log.debug("api username for temporary streams: %s", self._temp_stream_api_username)
+        return self._temp_stream_api_username
+
+    def get_temporary_stream_id(self):
+        """Atomically return a unique id that can be used to name a temporary stream.
+
+        We convert the integer to a string for consistency as it will get converted
+        to a string anyway on the way to QML and back.
+
+        :return: temporary stream id
+        :rtype: str
+        """
+        with self._temporary_stream_id_lock:
+            self._temporary_stream_id += 1
+            return str(self._temporary_stream_id)
+
+    def get_named_stream_list(self):
         """Get list of message streams."""
         stream_list = stream_module.stream_manager.stream_list
         # Populate the stream list with some initial content if empty.
@@ -285,12 +332,13 @@ class Streams(object):
         message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)
         return message_dict, matches_active_id
 
-    def get_stream_messages(self, stream_name, refresh=False):
+    def get_stream_messages(self, stream_name, temporary=False):
         """Get a list of messages for stream identified by stream name."""
-        stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+        if temporary:
+            stream = self._temporary_streams.get(stream_name)
+        else:
+            stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
         if stream:
-            if refresh:
-                stream.refresh()
             message_list = []
             active_message_id = None
             match_index = None
@@ -314,9 +362,50 @@ class Streams(object):
             self.gui.log.error("Stream with this name does not exist: %s" % stream_name)
             return [[], None]
 
-    def refresh_stream(self, stream_name):
+    def get_hashtag_stream(self, hashtag):
+        """ Return a a temporary hashtag stream id.
+
+        The id can be used to retrieve stream messages and to
+        remove the stream once it is no longer needed.
+
+        :param str hashtag: a Twitter hashtag
+        :return: id of a temporary hashtag stream
+        """
+
+        # create temporary stream
+        hashtag_stream = stream_module.MessageStream.new(
+            db = self._temp_db,
+            name = "#%s" % hashtag
+        )
+        # create temporary source
+        hashtag_stream_source = stream_module.TwitterHashtagTweets.new(
+            db = self._temp_db,
+            api_username=self.temp_stream_api_username,
+            hashtag = hashtag
+        )
+        hashtag_stream_source.cache_messages = False
+        hashtag_stream.inputs.add(hashtag_stream_source)
+        hashtag_stream.refresh()
+        return self._store_temporary_stream(hashtag_stream)
+
+    def get_user_messages_stream(self, username):
+        pass
+
+    def get_user_favourites_stream(self, username):
+        pass
+
+    def _store_temporary_stream(self, stream):
+        temporary_stream_id = self.get_temporary_stream_id()
+        self._temporary_streams[temporary_stream_id] = stream
+        return temporary_stream_id
+
+    def refresh_stream(self, stream_name, temporary=False):
         """Get a message stream identified by stream name."""
-        stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+        if temporary:
+            stream = self._temporary_streams.get(stream_name)
+        else:
+            stream = stream_module.stream_manager.stream_dict.get(stream_name, None)
+
         if stream:
             message_list = []
             new_messages = stream.refresh()
@@ -336,6 +425,11 @@ class Streams(object):
         """Try to delete a stream by name."""
         return stream_module.stream_manager.delete_stream(stream_name)
 
+    def remove_temporary_stream(self, stream_name):
+        if stream_name in self._temporary_streams:
+            self.gui.log.debug("removing temp stream: %s", stream_name)
+            del self._temporary_streams[stream_name]
+
     def set_stream_active_message(self, stream_name, message_data):
         """Set active message id for a stream."""
         message_type = message_data.get("tsubame_message_type")
@@ -352,6 +446,9 @@ class Streams(object):
         else:
             self.gui.log.error("Can't set active message id - unknown message type: %s", message_type)
 
+    def _shutdown(self):
+        """A general purpose shutdown method."""
+        self._tempdir.cleanup()
 
 class Search(object):
     """An easy to use search interface for the QML context."""
