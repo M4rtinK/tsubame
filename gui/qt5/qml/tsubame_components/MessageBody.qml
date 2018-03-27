@@ -16,7 +16,12 @@ Label {
         if (link.startsWith("@")) {  // username
             rWin.log.debug("username")
         } else if (link.startsWith("#")) {  //hashtag
-            rWin.log.debug("hashtag")
+            var hashtagPage = rWin.loadPage("HashtagStreamPage")
+            rWin.log.debug("CREATE HASHTAG PAGE")
+            hashtagPage.hashtag = link.substring(1)
+            rWin.log.debug(hashtagPage.hashtag)
+            rWin.log.debug(link.substring(1))
+            rWin.pushPageInstance(hashtagPage)
         } else {  // URL
             Qt.openUrlExternally(link)
         }
