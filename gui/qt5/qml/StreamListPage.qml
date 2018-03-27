@@ -65,7 +65,7 @@ BasePage {
         // reload the stream list from the Python backend
         rWin.log.info("loading message stream list")
         streamListPage.fetchingStreams = true
-        rWin.python.call("tsubame.gui.streams.get_stream_list", [], function(stream_list){
+        rWin.python.call("tsubame.gui.streams.get_named_stream_list", [], function(stream_list){
             streamLW.model.clear()
             for (var i=0; i<stream_list.length; i++) {
                 var stream = stream_list[i]

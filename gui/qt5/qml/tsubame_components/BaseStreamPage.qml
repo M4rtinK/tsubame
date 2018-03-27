@@ -13,10 +13,15 @@ import UC 1.0
 BasePage {
     id : baseStreamPage
     property string streamName : ""
+    // displayed when the stream is idle
+    // (so derived pages can override it without having to reimplement
+    // the "refreshing" text)
+    property string idleStateHeaderText : streamName
+    property bool temporaryStream : false
     property bool fetchingMessages : false
     property bool refreshInProgress : false
     property alias contentY : streamLW.contentY
-    headerText : refreshInProgress ? qsTr("Refreshing...") : streamName
+    headerText : refreshInProgress ? qsTr("Refreshing...") : idleStateHeaderText
     headerMenu : TopMenu {
         MenuItem {
             text : qsTr("Refresh")
@@ -103,6 +108,13 @@ BasePage {
         get_messages()
     }
 
+    Component.onDestruction: {
+        // tell Python we no longer need any temporary streams possibly corresponding to this page
+        if (baseStreamPage.temporaryStream) {
+            rWin.python.call("tsubame.gui.streams.remove_temporary_stream", [baseStreamPage.streamName])
+        }
+    }
+
     function get_message_dict(message) {verticalCenter
         // full type-specific dict describing the message
         return {"messageData" : message}
@@ -112,7 +124,7 @@ BasePage {
         // reload the stream list from the Python backend
         rWin.log.info("loading messages for " + streamName)
         baseStreamPage.fetchingMessages = true
-        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, false], function(result){
+        rWin.python.call("tsubame.gui.streams.get_stream_messages", [streamName, baseStreamPage.temporaryStream], function(result){
             var message_list = result[0]
             var match_index = result[1]
             streamLW.model.clear()
@@ -134,7 +146,7 @@ BasePage {
         // reload the stream list from the Python backend
         rWin.log.info("refreshing stream " + streamName)
         baseStreamPage.refreshInProgress = true
-        rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName], function(message_list){
+        rWin.python.call("tsubame.gui.streams.refresh_stream", [streamName, baseStreamPage.temporaryStream], function(message_list){
             for (var i=0; i<message_list.length; i++) {
                 streamLW.model.append(get_message_dict(message_list[i]))
             }
