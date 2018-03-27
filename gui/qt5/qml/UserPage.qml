@@ -66,6 +66,11 @@ BasePage {
                 height : userTBR.height
                 label.horizontalAlignment : Text.AlignHCenter
                 label.text : "<b>" + qsTr("Tweets") + "</b><br>" + userPage.user.statuses_count
+                onClicked : {
+                    var userTweetsPage = rWin.loadPage("UserTweetsStreamPage")
+                    userTweetsPage.username = userPage.user.screen_name
+                    rWin.pushPageInstance(userTweetsPage)
+                }
             }
             ThemedTextRectangle {
                 width : userItemsRow.itemWidth

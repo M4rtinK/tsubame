@@ -363,7 +363,7 @@ class Streams(object):
             return [[], None]
 
     def get_hashtag_stream(self, hashtag):
-        """ Return a a temporary hashtag stream id.
+        """ Return a temporary hashtag stream id.
 
         The id can be used to retrieve stream messages and to
         remove the stream once it is no longer needed.
@@ -388,8 +388,32 @@ class Streams(object):
         hashtag_stream.refresh()
         return self._store_temporary_stream(hashtag_stream)
 
-    def get_user_messages_stream(self, username):
-        pass
+    def get_user_tweets_stream(self, username):
+        """ Return a temporary user tweet stream id.
+
+        The id can be used to retrieve stream messages and to
+        remove the stream once it is no longer needed.
+
+        :param str username: a Twitter username
+        :return: id of a temporary user message stream
+        """
+
+        # create temporary stream
+        user_tweet_stream = stream_module.MessageStream.new(
+            db = self._temp_db,
+            name = "@%s tweets" % username
+        )
+        # create temporary source
+        user_tweet_stream_source = stream_module.TwitterUserTweets.new(
+            db = self._temp_db,
+            api_username=self.temp_stream_api_username,
+            source_username = username
+        )
+        user_tweet_stream_source.cache_messages = False
+        user_tweet_stream.inputs.add(user_tweet_stream_source)
+        user_tweet_stream.refresh()
+        return self._store_temporary_stream(user_tweet_stream)
+
 
     def get_user_favourites_stream(self, username):
         pass
