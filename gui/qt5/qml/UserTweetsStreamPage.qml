@@ -9,6 +9,8 @@ BaseStreamPage {
     temporaryStream : true
     property string username : ""
     idleStateHeaderText: "@" + username
+    // temporary stream always fetch messages on startup
+    fetchingMessages : true
 
     onUsernameChanged : {
         // tell Python we want to have a temporary stream for a hashtag setup
