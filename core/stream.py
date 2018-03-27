@@ -44,6 +44,7 @@ class SourceTypes(Enum):
     TWITTER_USER_FAVOURITES = "source-twitter-user-favourites"
     TWITTER_REMOTE_LIST = "source-twitter-remote-list"
     TWITTER_LOCAL_LIST = "source-twitter-local-list"
+    TWITTER_HASHTAG = "source-twitter-hashtag"
 
 
 class MessageStreamNameAlreadyExists(Exception):
@@ -325,6 +326,32 @@ class TwitterLocalList(TwitterMessageSource):
     # I guess there could be rate limiting issues
     # if we query tweets from many users at once
 
+
+class TwitterHashtagTweetsData(blitzdb.Document):
+    pass
+
+
+class TwitterHashtagTweets(TwitterMessageSource):
+    """Tweets corresponding to a hashtag."""
+    source_type = SourceTypes.TWITTER_HASHTAG
+
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
+    data_defaults.update({"hashtag": None})
+
+    @classmethod
+    def new(cls, db, api_username, hashtag):
+        data = TwitterHashtagTweetsData(copy.deepcopy(cls.data_defaults))
+        data.hashtag = hashtag
+        data.api_username = api_username
+        return cls(db, data)
+
+    @property
+    def hashtag(self):
+        return self.data.hashtag
+
+    def _do_refresh(self):
+        term = "#%s" % self.hashtag
+        return self.api.GetSearch(term=term, since_id=self.latest_message_id)
 
 class MessageStreamData(blitzdb.Document):
     pass
