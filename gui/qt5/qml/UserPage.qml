@@ -90,6 +90,11 @@ BasePage {
             height : userTBR.height
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("Favorites") + "</b><br>" + userPage.user.favourites_count
+            onClicked : {
+                var userFavoritesPage = rWin.loadPage("UserFavoritesStreamPage")
+                userFavoritesPage.username = userPage.user.screen_name
+                rWin.pushPageInstance(userFavoritesPage)
+            }
         }
         ThemedTextRectangle {
             width : parent.width

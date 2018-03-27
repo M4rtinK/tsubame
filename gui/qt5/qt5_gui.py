@@ -414,9 +414,31 @@ class Streams(object):
         user_tweet_stream.refresh()
         return self._store_temporary_stream(user_tweet_stream)
 
+    def get_user_favorites_stream(self, username):
+        """ Return a temporary user favorites stream id.
 
-    def get_user_favourites_stream(self, username):
-        pass
+        The id can be used to retrieve stream messages and to
+        remove the stream once it is no longer needed.
+
+        :param str username: a Twitter username
+        :return: id of a temporary user favorites stream
+        """
+
+        # create temporary stream
+        user_favorites_stream = stream_module.MessageStream.new(
+            db = self._temp_db,
+            name = "@%s favorites" % username
+        )
+        # create temporary source
+        user_favorites_stream_source = stream_module.TwitterUserFavorites.new(
+            db = self._temp_db,
+            api_username=self.temp_stream_api_username,
+            source_username = username
+        )
+        user_favorites_stream_source.cache_messages = False
+        user_favorites_stream.inputs.add(user_favorites_stream_source)
+        user_favorites_stream.refresh()
+        return self._store_temporary_stream(user_favorites_stream)
 
     def _store_temporary_stream(self, stream):
         temporary_stream_id = self.get_temporary_stream_id()

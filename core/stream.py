@@ -265,11 +265,11 @@ class TwitterUserTweets(TwitterMessageSource):
                                         count=200)
 
 
-class TwitterUserFavouritesData(blitzdb.Document):
+class TwitterUserFavoritesData(blitzdb.Document):
     pass
 
 
-class TwitterUserFavourites(TwitterMessageSource):
+class TwitterUserFavorites(TwitterMessageSource):
     """Favourites of a Twitter user."""
     source_type = SourceTypes.TWITTER_USER_FAVOURITES
 
@@ -278,7 +278,7 @@ class TwitterUserFavourites(TwitterMessageSource):
 
     @classmethod
     def new(cls, db, api_username, source_username):
-        data = TwitterUserFavouritesData(copy.deepcopy(cls.data_defaults))
+        data = TwitterUserFavoritesData(copy.deepcopy(cls.data_defaults))
         data.api_username = api_username
         data.source_username = source_username
         return cls(db, data)
@@ -288,7 +288,9 @@ class TwitterUserFavourites(TwitterMessageSource):
         return self.data.source_username
 
     def _do_refresh(self):
-        return self.api.GetFavorites(user_id=self.source_username, since_id=self.latest_message_id)
+        return self.api.GetFavorites(screen_name=self.source_username,
+                                     since_id=self.latest_message_id,
+                                     count=200)
 
 
 class TwitterRemoteListData(blitzdb.Document):
@@ -676,7 +678,7 @@ CLASS_MAP = {
     OwnTwitterFavouritesData : OwnTwitterFavourites,
     OwnTwitterMentionsData : OwnTwitterMentions,
     TwitterUserTweetsData : TwitterUserTweets,
-    TwitterUserFavouritesData : TwitterUserFavourites,
+    TwitterUserFavoritesData : TwitterUserFavorites,
     TwitterRemoteListData : TwitterRemoteList,
     TwitterLocalListData : TwitterLocalList
 }
