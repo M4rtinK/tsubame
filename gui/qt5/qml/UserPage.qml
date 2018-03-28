@@ -112,9 +112,6 @@ BasePage {
             visible : userPage.user.location != null
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("location") +":</b> " + userPage.user.location
-            onClicked : {
-                Qt.openUrlExternally(userPage.user.url)
-            }
         }
         ThemedTextRectangle {
             width : parent.width
@@ -122,9 +119,6 @@ BasePage {
             visible : userPage.user.time_zone != null
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("timezone") + ":</b> " + userPage.user.time_zone
-            onClicked : {
-                Qt.openUrlExternally(userPage.user.url)
-            }
         }
 
 
