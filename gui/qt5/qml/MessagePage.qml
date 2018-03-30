@@ -28,6 +28,11 @@ BasePage {
             // Explicit width setting is needed due to the MediaGrid
             // for some reason. We should probably fix that.
             width : messagePage.width - rWin.c.style.main.spacing * 2
+            onUserInfoClicked : {
+                        rWin.log.info("user info clicked")
+                        var userPage = rWin.loadPage("UserPage", {"user" : messagePage.message.user, "dataValid" : true})
+                        rWin.pushPageInstance(userPage)
+            }
         }
         Row {
             spacing : rWin.c.style.main.spacing
