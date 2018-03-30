@@ -81,7 +81,7 @@ BasePage {
                     }
                     onUserInfoClicked : {
                         rWin.log.info("user info clicked")
-                        var userPage = rWin.loadPage("UserPage", {"user" : messageData.user})
+                        var userPage = rWin.loadPage("UserPage", {"user" : messageData.user, "dataValid" : true})
                         rWin.pushPageInstance(userPage)
                     }
                 }

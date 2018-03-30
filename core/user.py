@@ -23,6 +23,18 @@
 import blitzdb
 from threading import RLock
 from core.base import TsubameBase, TsubamePersistentBase
+from core import api as api_module
+
+def get_user_info(api_username, username):
+    """Return information about a user specified by screen name.
+
+    :param str api_username: username corresponding to a valid Twitter account Tsubame knows
+    :param str username: screen name of user to lookup
+
+    :return: information about the user (if any)
+    """
+    api = api_module.api_manager.get_twitter_api(api_username)
+    return api.GetUser(screen_name=username)
 
 class LocalTwitterUserListData(blitzdb.Document):
     pass

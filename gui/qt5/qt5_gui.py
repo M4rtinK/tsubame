@@ -34,6 +34,7 @@ from core import utils
 from core import tsubame_log
 from core import stream as stream_module
 from core import api as api_module
+from core import user as user_module
 from core import download
 from core.signal import Signal
 from gui.gui_base import GUI
@@ -60,6 +61,7 @@ class Qt5GUI(GUI):
         # some constants
         size = (800, 480) # initial window size
         self._screen_size = None
+        self._temp_stream_api_username = None
 
         # we handle notifications by forwarding them to the QML context
         self.tsubame.notification_triggered.connect(self._dispatch_notification_cb)
@@ -111,6 +113,9 @@ class Qt5GUI(GUI):
         # stream management
         self.streams = Streams(self)
 
+        # handling of users
+        self.users = Users(self)
+
         # download handling
         self.download = Download(self)
 
@@ -119,6 +124,17 @@ class Qt5GUI(GUI):
         # queue a notification to QML context that
         # a Python loggers is available
         pyotherside.send("loggerAvailable")
+
+    @property
+    def general_purpose_api_username(self):
+        # Basically one of the accounts for stuff like fetching data for temporary streams
+        # or looking up user information. In most cases any valid Twitter account should do.
+        # TODO: make this configurable
+        if not self._temp_stream_api_username:
+            self._temp_stream_api_username = api_module.api_manager.get_an_api_username()
+            self.log.debug("api username for temporary streams: %s", self._temp_stream_api_username)
+        return self._temp_stream_api_username
+
 
     def _shutdown(self):
         """Called by PyOtherSide once the QML side is shutdown.
@@ -266,17 +282,6 @@ class Streams(object):
         self._temporary_stream_id = -1
         self._temporary_stream_id_lock = threading.RLock()
 
-        self._temp_stream_api_username = None
-
-    @property
-    def temp_stream_api_username(self):
-        # one of the accounts for fetching data for temporary streams
-        # TODO: make this configurable
-        if not self._temp_stream_api_username:
-            self._temp_stream_api_username = api_module.api_manager.get_an_api_username()
-            self.gui.log.debug("api username for temporary streams: %s", self._temp_stream_api_username)
-        return self._temp_stream_api_username
-
     def get_temporary_stream_id(self):
         """Atomically return a unique id that can be used to name a temporary stream.
 
@@ -380,7 +385,7 @@ class Streams(object):
         # create temporary source
         hashtag_stream_source = stream_module.TwitterHashtagTweets.new(
             db = self._temp_db,
-            api_username=self.temp_stream_api_username,
+            api_username=self.gui.general_purpose_api_username,
             hashtag = hashtag
         )
         hashtag_stream_source.cache_messages = False
@@ -406,7 +411,7 @@ class Streams(object):
         # create temporary source
         user_tweet_stream_source = stream_module.TwitterUserTweets.new(
             db = self._temp_db,
-            api_username=self.temp_stream_api_username,
+            api_username=self.gui.general_purpose_api_username,
             source_username = username
         )
         user_tweet_stream_source.cache_messages = False
@@ -432,7 +437,7 @@ class Streams(object):
         # create temporary source
         user_favorites_stream_source = stream_module.TwitterUserFavorites.new(
             db = self._temp_db,
-            api_username=self.temp_stream_api_username,
+            api_username=self.gui.general_purpose_api_username,
             source_username = username
         )
         user_favorites_stream_source.cache_messages = False
@@ -495,6 +500,27 @@ class Streams(object):
     def _shutdown(self):
         """A general purpose shutdown method."""
         self._tempdir.cleanup()
+
+class Users(object):
+    """Twitter user handling."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def get_user_info(self, username):
+        """Get information about a user (if available).
+
+        :param str username: screen name of user to lookup
+
+        :return: information about the user (if any)
+        :rtype: dict
+
+        """
+        result = user_module.get_user_info(self.gui.general_purpose_api_username, username)
+        if result:
+            return result.AsDict()
+        else:
+            return None
 
 class Search(object):
     """An easy to use search interface for the QML context."""

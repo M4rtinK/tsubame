@@ -7,9 +7,39 @@ import "functions.js" as F
 
 BasePage {
     id : userPage
-    property var user
-    headerText : "@" + user.screen_name
+    property bool dataValid : false
+    // If the lookupUsername property is set
+    // it means we need to lookup information
+    // about the user as it will not be provided
+    // at page creation time.
+    property string lookupUsername : ""
+    property var user : {
+        "screen_name" : null,
+        "description" : null,
+        "statuses_count" : null,
+        "friends_count" : null,
+        "followers_count" : null,
+        "favourites_count" : null,
+        "url" : null,
+        "location" : null,
+        "time_zone" : null
+    }
+    headerText : userPage.dataValid ? "@" + user.screen_name : qsTr("fetching user info")
     property real horizontalMargin : rWin.c.style.main.spacing
+
+    onLookupUsernameChanged : {
+        rWin.python.call("tsubame.gui.users.get_user_info", [lookupUsername], function(userInfo){
+            if (userInfo) {
+                rWin.log.debug("got information about user @" + lookupUsername)
+                userPage.user = userInfo
+            } else {
+                rWin.log.debug("got no information about user @" + lookupUsername)
+            }
+            // no data found for username is also valid data
+            userPage.dataValid = true
+        })
+    }
+
     content : ContentColumn {
         anchors.left : parent.left
         anchors.right : parent.right
@@ -17,6 +47,7 @@ BasePage {
 
         ThemedBackgroundRectangle {
             id : userTBR
+            visible : userPage.dataValid
             width : parent.width
             height : userInfo.height + rWin.c.style.main.spacing * 2.0
             UserInfo {
@@ -58,6 +89,7 @@ BasePage {
         }
         Row {
             id : userItemsRow
+            visible : userPage.dataValid
             width : parent.width
             spacing : rWin.c.style.main.spacing
             property int itemWidth : (width - 2 * spacing) / 3.0
@@ -88,6 +120,7 @@ BasePage {
         ThemedTextRectangle {
             width : parent.width
             height : userTBR.height
+            visible : userPage.dataValid
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("Favorites") + "</b><br>" + userPage.user.favourites_count
             onClicked : {
@@ -120,7 +153,11 @@ BasePage {
             label.horizontalAlignment : Text.AlignHCenter
             label.text : "<b>" + qsTr("timezone") + ":</b> " + userPage.user.time_zone
         }
-
-
+    }
+    BusyIndicator {
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        visible : !userPage.dataValid
+        running : !userPage.dataValid
     }
 }
