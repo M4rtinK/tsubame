@@ -76,6 +76,11 @@ function p2pDistanceString(point1, point2) {
    return formatDistance(getDistanceTo(lat1, lon1, lat2, lon2), 1)
 }
 
+function makeUsernamesClickable(inputString) {
+    // make just Twitter usernames and hashtags clickable
+    return inputString.replace(/(@\w+)/g,'<a href="$&">$&</a>')
+}
+
 function makeTextClickable(inputString, linksClickable) {
     if (linksClickable) {
         // make Twitter related things & URLs clickable in a piece of text

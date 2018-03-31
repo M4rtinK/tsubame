@@ -332,6 +332,18 @@ class Streams(object):
             full_text = message_dict["full_text"]
             message_dict["full_text"] = full_text.replace(medium["url"], "").rstrip()
 
+        # make hashtags clickable
+        # - we cant really do this with regexps on the QML side as the Javascript regexps
+        #   can't really handle non latin characters such as Japanese
+        # - if this even turns into a bottleneck we can likely move these substitutions
+        #   to the delegate on the QML side
+        for hashtag in message_dict.get("hashtags", []):
+            full_text = message_dict["full_text"]
+            hashtag_string = hashtag["text"]
+            link = '<a href="#%s">#%s</a>' % (hashtag_string, hashtag_string)
+            message_dict["full_text"] = full_text.replace("#" + hashtag_string, link)
+
+
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
         message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)
