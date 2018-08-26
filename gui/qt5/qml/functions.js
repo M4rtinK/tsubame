@@ -84,7 +84,7 @@ function makeUsernamesClickable(inputString) {
 function makeTextClickable(inputString, linksClickable) {
     if (linksClickable) {
         // make Twitter related things & URLs clickable in a piece of text
-        return inputString.replace(/(@\w+)|(#.+)\s|(http\S+)/g,'<a href="$&">$&</a>')
+        return inputString.replace(/(@\w+)|(#\S+)\s|(http\S+)/g,'<a href="$&">$&</a>')
     } else {
         // make just Twitter usernames and hashtags clickable
         return inputString.replace(/(@\w+)|(#\w+)/g,'<a href="$&">$&</a>')
