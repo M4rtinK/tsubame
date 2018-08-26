@@ -77,10 +77,14 @@ BasePage {
                 textFormat : Text.StyledText
                 onLinkActivated : {
                     rWin.log.info('user description link clicked: ' + link)
-                    if (link.startsWith("@")) {  // username
-                        rWin.log.debug("username")
-                    } else if (link.startsWith("#")) {  //hashtag
-                        rWin.log.debug("hashtag")
+                    if (link.substring(0, 1) == "@") {  // username
+                        var userPage = rWin.loadPage("UserPage")
+                        userPage.lookupUsername = link.substring(1)
+                        rWin.pushPageInstance(userPage)
+                    } else if (link.substring(0, 1) == "#") {  //hashtag
+                        var hashtagPage = rWin.loadPage("HashtagStreamPage")
+                        hashtagPage.hashtag = link.substring(1)
+                        rWin.pushPageInstance(hashtagPage)
                     } else {  // URL
                         Qt.openUrlExternally(link)
                     }
