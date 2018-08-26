@@ -25,6 +25,17 @@ BasePage {
         "time_zone" : null
     }
     headerText : userPage.dataValid ? "@" + user.screen_name : qsTr("fetching user info")
+    headerMenu : TopMenu {
+        MenuItem {
+            text: qsTr("Open profile in browser")
+            onClicked : {
+                rWin.log.info('opening user profile in browser: ' + user.screen_name)
+                var profile_url = "https://twitter.com/" + user.screen_name
+                Qt.openUrlExternally(profile_url)
+            }
+        }
+    }
+
     property real horizontalMargin : rWin.c.style.main.spacing
 
     onLookupUsernameChanged : {
