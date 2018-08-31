@@ -125,6 +125,9 @@ class Qt5GUI(GUI):
         # a Python loggers is available
         pyotherside.send("loggerAvailable")
 
+        # debugging properties
+        self.debug_message_content = False
+
     @property
     def general_purpose_api_username(self):
         # Basically one of the accounts for stuff like fetching data for temporary streams
@@ -369,9 +372,9 @@ class Streams(object):
                     message_list.append(message_dict)
                     if match:
                         match_index = len(message_list)-1
-
-                    #log.debug("MESSAGE")
-                    #log.debug(message)
+                    if self.gui.debug_message_content:
+                        log.debug("MESSAGE:")
+                        log.debug(message)
                 else:
                     self.gui.log.error("skipping unsupported message from stream %s: %s", stream, message)
             return [message_list, match_index]
