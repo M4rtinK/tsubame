@@ -1,4 +1,4 @@
-//StreamSettingsPage.qml
+//globalMenuPage.qml
 
 import QtQuick 2.0
 import UC 1.0
@@ -8,7 +8,24 @@ BasePage {
     id : streamSettings
     headerText : qsTr("Global menu")
     content : ContentColumn {
-        anchors.left : parent.left
-        anchors.right : parent.right
+        SmartGrid {
+            id : smartGrid
+            TextButton {
+                width : parent.cellWidth
+                text: qsTr("<b>Main stream list<b/>")
+                onClicked : {
+                    var streamList = rWin.loadPage("StreamListPage")
+                    streamList.backButtonVisible = true
+                    rWin.pushPageInstance(streamList)
+                }
+            }
+            TextButton {
+                width : parent.cellWidth
+                text: qsTr("<b>Options</b>")
+                onClicked : {
+                    rWin.pushPageInstance(rWin.loadPage("GlobalOptionsPage"))
+                }
+            }
+        }
     }
 }
