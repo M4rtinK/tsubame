@@ -8,6 +8,16 @@ BasePage {
     id : streamListPage
 
     headerText: qsTr("Message streams")
+    headerMenu : TopMenu {
+        MenuItem {
+            text: qsTr("Global menu")
+            onClicked : {
+                var globalMenuPage = rWin.loadPage("GlobalMenuPage")
+                rWin.pushPageInstance(globalMenuPage)
+            }
+        }
+    }
+
     backButtonVisible : false
     property bool fetchingStreams : false
 

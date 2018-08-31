@@ -25,6 +25,13 @@ BasePage {
     headerText : refreshInProgress ? qsTr("Refreshing...") : idleStateHeaderText
     headerMenu : TopMenu {
         MenuItem {
+            text: qsTr("Global menu")
+            onClicked : {
+                var globalMenuPage = rWin.loadPage("GlobalMenuPage")
+                rWin.pushPageInstance(globalMenuPage)
+            }
+        }
+        MenuItem {
             text : qsTr("Refresh")
             onClicked : {
                 refreshStream(streamName)
