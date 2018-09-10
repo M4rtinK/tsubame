@@ -21,6 +21,14 @@ BasePage {
             }
             TextButton {
                 width : parent.cellWidth
+                text: qsTr("<b>Accounts<b/>")
+                onClicked : {
+                    var accountsPage = rWin.loadPage("AccountsPage")
+                    rWin.pushPageInstance(accountsPage)
+                }
+            }
+            TextButton {
+                width : parent.cellWidth
                 text: qsTr("<b>Options</b>")
                 onClicked : {
                     rWin.pushPageInstance(rWin.loadPage("GlobalOptionsPage"))

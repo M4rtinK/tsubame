@@ -8,7 +8,20 @@ BasePage {
     id : streamSettings
     headerText : qsTr("Global options")
     content : ContentColumn {
+        SmartGrid {
+            id : smartGrid
+            TextButton {
+                width : parent.cellWidth
+                text: qsTr("<b>Media</b>")
+                onClicked : {
+                    rWin.pushPageInstance(rWin.loadPage("MediaOptionsPage"))
+                }
+            }
+        }
     }
+
+
+
 }
 
 
