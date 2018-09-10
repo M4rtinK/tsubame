@@ -24,6 +24,14 @@ MouseArea {
         }
     }
 
+    Label {
+        id: loadingProgressLabel
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        text : image.status == Image.Error ? qsTr("<b>Image loading failed.</b>") : "<b>" + Math.round(image.progress * 100) + " %</b>"
+        visible : image.status == Image.Loading || image.status == Image.Error
+    }
+
     Image {
         id: image
         anchors.fill: parent
