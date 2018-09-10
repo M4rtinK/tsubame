@@ -29,6 +29,7 @@ MouseArea {
         anchors.fill: parent
         smooth: true
         asynchronous: true
+        cache: true
         fillMode: Image.PreserveAspectCrop
         clip: true
         opacity: 0
