@@ -13,6 +13,7 @@ Row {
         height : 48 * rWin.c.style.m
         smooth : true
         asynchronous : true
+        cache : true
     }
     Column {
         anchors.verticalCenter : userAvatar.verticalCenter
