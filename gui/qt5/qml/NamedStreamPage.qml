@@ -10,6 +10,13 @@ BaseStreamPage {
     id : namedStreamPage
     headerMenu : TopMenu {
         MenuItem {
+            text: qsTr("Global menu")
+            onClicked : {
+                var globalMenuPage = rWin.loadPage("GlobalMenuPage")
+                rWin.pushPageInstance(globalMenuPage)
+            }
+        }
+        MenuItem {
             text: qsTr("Stream settings")
             onClicked : {
                 var streamSettingsPage = rWin.loadPage("StreamSettingsPage")

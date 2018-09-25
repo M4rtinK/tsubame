@@ -23,21 +23,6 @@ BasePage {
     property alias contentY : streamLW.contentY
     signal listViewMovementEnded
     headerText : refreshInProgress ? qsTr("Refreshing...") : idleStateHeaderText
-    headerMenu : TopMenu {
-        MenuItem {
-            text: qsTr("Global menu")
-            onClicked : {
-                var globalMenuPage = rWin.loadPage("GlobalMenuPage")
-                rWin.pushPageInstance(globalMenuPage)
-            }
-        }
-        MenuItem {
-            text : qsTr("Refresh")
-            onClicked : {
-                refreshStream(streamName)
-            }
-        }
-    }
 
     function indexAt(index) {
         return streamLW.indexAt(0, index)

@@ -4,7 +4,7 @@ import QtQuick 2.0
 import UC 1.0
 import "tsubame_components"
 
-BaseStreamPage {
+BaseTemporaryStreamPage {
     id : userTweetsPage
     temporaryStream : true
     property string username : ""
