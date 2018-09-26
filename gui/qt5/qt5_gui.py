@@ -36,6 +36,7 @@ from core import stream as stream_module
 from core import api as api_module
 from core import user as user_module
 from core import download
+from core import account as account_module
 from core.signal import Signal
 from gui.gui_base import GUI
 
@@ -118,6 +119,9 @@ class Qt5GUI(GUI):
 
         # download handling
         self.download = Download(self)
+
+        # account handling
+        self.accounts = Accounts(self)
 
         # log for log messages from the QML context
         self.qml_log = qml_log
@@ -536,6 +540,59 @@ class Users(object):
             return result.AsDict()
         else:
             return None
+
+class Accounts(object):
+    """Twitter account handling."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def get_account_list(self):
+        """List all Twitter accounts that have been added to Tsubame.
+
+        :return: list of dicts representing all added accounts.
+        :rtype: list of dicts
+        """
+        accounts = []
+        for account in account_module.account_manager.twitter_accounts.values():
+            account_dict = {"username" : account.username,
+                            "name" : account.name}
+            accounts.append(account_dict)
+        self.gui.log.debug("%d accounts are available" % len(accounts))
+        return accounts
+
+    def add_account(self, account_username,
+                    access_token_key,
+                    access_token_secret,
+                    account_name=""):
+        """Add an account.
+
+        :param str account_username: account username
+        :param str access_token_key: access token key
+        :param str access_token_secret: access token secret
+        :param str account_name: optional account name
+        """
+        # we don't want zero length account names
+        if not account_name:
+            account_name = account_username
+
+        account_module.account_manager.add()
+        new_account = account_module.TwitterAccount.new(
+            db=self.gui.tsubame.db.main,
+            username=account_username,
+            name=account_name,
+            token=access_token_key,
+            token_secret=access_token_secret
+        )
+        account_module.account_manager.add(account=new_account)
+
+    def remove_account(self, account_username):
+        """Remove an account.
+
+        :param str account_username: account specified by username
+        """
+        account_module.account_manager.remove(account_username=account_username)
+
 
 class Search(object):
     """An easy to use search interface for the QML context."""
