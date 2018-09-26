@@ -27,6 +27,7 @@ import threading
 import twitter
 import re
 import tempfile
+import time
 
 from core import constants
 from core.threads import threadMgr
@@ -254,7 +255,10 @@ class Download(object):
     def __init__(self, gui):
         self.gui = gui
 
-    def download_image(self, url, image_source=IMAGE_SOURCE_TWITTER):
+    def download_image(self,
+                       url,
+                       image_source=IMAGE_SOURCE_TWITTER,
+                       monthly_subfolders=True):
         filename = url.split('/')[-1]
         # TODO: use constant
         if image_source == IMAGE_SOURCE_TWITTER:
@@ -263,6 +267,8 @@ class Download(object):
         download_folder = os.path.join(self.gui.tsubame.paths.pictures_folder_path,
                                        "tsubame",
                                        image_source)
+        if monthly_subfolders:
+            download_folder = os.path.join(download_folder, time.strftime("%Y_%m"))
         return download.download_file_(url=url, download_folder=download_folder, filename=filename)
 
 
