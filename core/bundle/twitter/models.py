@@ -28,10 +28,17 @@ class TwitterModel(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def AsJsonString(self):
+    def __hash__(self):
+        if hasattr(self, 'id'):
+            return hash(self.id)
+        else:
+            raise TypeError('unhashable type: {} (no id attribute)'
+                            .format(type(self)))
+
+    def AsJsonString(self, ensure_ascii=True):
         """ Returns the TwitterModel as a JSON string based on key/value
         pairs returned from the AsDict() method. """
-        return json.dumps(self.AsDict(), sort_keys=True)
+        return json.dumps(self.AsDict(), ensure_ascii=ensure_ascii, sort_keys=True)
 
     def AsDict(self):
         """ Create a dictionary representation of the object. Please see inline
@@ -178,21 +185,13 @@ class DirectMessage(TwitterModel):
         self.param_defaults = {
             'created_at': None,
             'id': None,
-            'recipient': None,
             'recipient_id': None,
-            'recipient_screen_name': None,
-            'sender': None,
             'sender_id': None,
-            'sender_screen_name': None,
             'text': None,
         }
 
         for (param, default) in self.param_defaults.items():
             setattr(self, param, kwargs.get(param, default))
-        if 'sender' in kwargs:
-            self.sender = User.NewFromJsonDict(kwargs.get('sender', None))
-        if 'recipient' in kwargs:
-            self.recipient = User.NewFromJsonDict(kwargs.get('recipient', None))
 
     def __repr__(self):
         if self.text and len(self.text) > 140:
@@ -201,7 +200,7 @@ class DirectMessage(TwitterModel):
             text = self.text
         return "DirectMessage(ID={dm_id}, Sender={sender}, Created={time}, Text='{text!r}')".format(
             dm_id=self.id,
-            sender=self.sender_screen_name,
+            sender=self.sender_id,
             time=self.created_at,
             text=text)
 
@@ -275,12 +274,12 @@ class UserStatus(TwitterModel):
     """ A class representing the UserStatus structure. This is an abbreviated
     form of the twitter.User object. """
 
-    connections = {'following': False,
-                   'followed_by': False,
-                   'following_received': False,
-                   'following_requested': False,
-                   'blocking': False,
-                   'muting': False}
+    _connections = {'following': False,
+                    'followed_by': False,
+                    'following_received': False,
+                    'following_requested': False,
+                    'blocking': False,
+                    'muting': False}
 
     def __init__(self, **kwargs):
         self.param_defaults = {
@@ -300,9 +299,18 @@ class UserStatus(TwitterModel):
             setattr(self, param, kwargs.get(param, default))
 
         if 'connections' in kwargs:
-            for param in self.connections:
+            for param in self._connections:
                 if param in kwargs['connections']:
                     setattr(self, param, True)
+
+    @property
+    def connections(self):
+        return {'following': self.following,
+                'followed_by': self.followed_by,
+                'following_received': self.following_received,
+                'following_requested': self.following_requested,
+                'blocking': self.blocking,
+                'muting': self.muting}
 
     def __repr__(self):
         connections = [param for param in self.connections if getattr(self, param)]
@@ -330,6 +338,7 @@ class User(TwitterModel):
             'friends_count': None,
             'geo_enabled': None,
             'id': None,
+            'id_str': None,
             'lang': None,
             'listed_count': None,
             'location': None,
@@ -337,12 +346,16 @@ class User(TwitterModel):
             'notifications': None,
             'profile_background_color': None,
             'profile_background_image_url': None,
+            'profile_background_image_url_https': None,
             'profile_background_tile': None,
             'profile_banner_url': None,
             'profile_image_url': None,
+            'profile_image_url_https': None,
             'profile_link_color': None,
+            'profile_sidebar_border_color': None,
             'profile_sidebar_fill_color': None,
             'profile_text_color': None,
+            'profile_use_background_image': None,
             'protected': None,
             'screen_name': None,
             'status': None,
@@ -351,6 +364,8 @@ class User(TwitterModel):
             'url': None,
             'utc_offset': None,
             'verified': None,
+            'withheld_in_countries': None,
+            'withheld_scope': None,
         }
 
         for (param, default) in self.param_defaults.items():
@@ -396,6 +411,9 @@ class Status(TwitterModel):
             'media': None,
             'place': None,
             'possibly_sensitive': None,
+            'quoted_status': None,
+            'quoted_status_id': None,
+            'quoted_status_id_str': None,
             'retweet_count': None,
             'retweeted': None,
             'retweeted_status': None,
@@ -438,17 +456,21 @@ class Status(TwitterModel):
             string: A string representation of this twitter.Status instance with
             the ID of status, username and datetime.
         """
+        if self.tweet_mode == 'extended':
+            text = self.full_text
+        else:
+            text = self.text
         if self.user:
             return "Status(ID={0}, ScreenName={1}, Created={2}, Text={3!r})".format(
                 self.id,
                 self.user.screen_name,
                 self.created_at,
-                self.text)
+                text)
         else:
             return u"Status(ID={0}, Created={1}, Text={2!r})".format(
                 self.id,
                 self.created_at,
-                self.text)
+                text)
 
     @classmethod
     def NewFromJsonDict(cls, data, **kwargs):
@@ -463,10 +485,16 @@ class Status(TwitterModel):
         current_user_retweet = None
         hashtags = None
         media = None
+        quoted_status = None
         retweeted_status = None
         urls = None
         user = None
         user_mentions = None
+
+        # for loading extended tweets from the streaming API.
+        if 'extended_tweet' in data:
+            for k, v in data['extended_tweet'].items():
+                data[k] = v
 
         if 'user' in data:
             user = User.NewFromJsonDict(data['user'])
@@ -474,6 +502,8 @@ class Status(TwitterModel):
             retweeted_status = Status.NewFromJsonDict(data['retweeted_status'])
         if 'current_user_retweet' in data:
             current_user_retweet = data['current_user_retweet']['id']
+        if 'quoted_status' in data:
+            quoted_status = Status.NewFromJsonDict(data.get('quoted_status'))
 
         if 'entities' in data:
             if 'urls' in data['entities']:
@@ -494,6 +524,7 @@ class Status(TwitterModel):
                                                current_user_retweet=current_user_retweet,
                                                hashtags=hashtags,
                                                media=media,
+                                               quoted_status=quoted_status,
                                                retweeted_status=retweeted_status,
                                                urls=urls,
                                                user=user,
