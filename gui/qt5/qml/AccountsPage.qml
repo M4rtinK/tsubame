@@ -29,6 +29,11 @@ BasePage {
                     anchors.verticalCenter : parent.verticalCenter
                     horizontalAlignment : Text.AlignHCenter
                 }
+                onClicked : {
+                    var accountPage = rWin.loadPage("AccountPage")
+                    accountPage.lookupUsername = username
+                    rWin.pushPageInstance(accountPage)
+                }
             }
         }
     }
