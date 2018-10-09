@@ -38,6 +38,7 @@ from core import api as api_module
 from core import user as user_module
 from core import download
 from core import account as account_module
+from core import list as list_module
 from core.signal import Signal
 from gui.gui_base import GUI
 
@@ -49,6 +50,15 @@ log = logging.getLogger("mod.gui.qt5")
 qml_log = logging.getLogger("mod.gui.qt5.qml")
 
 IMAGE_SOURCE_TWITTER = "twitter"
+
+
+class TwitterAPIUsernameNotFound(Exception):
+
+    def __init__(self, account_username):
+        self.account_username = account_username
+
+    def __str__(self):
+        return "no API instance found for account username: %s" % self.account_username
 
 def newlines2brs(text):
     """ QML uses <br> instead of \n for linebreak """
@@ -124,6 +134,9 @@ class Qt5GUI(GUI):
         # account handling
         self.accounts = Accounts(self)
 
+        # list handling
+        self.lists = Lists(self)
+
         # log for log messages from the QML context
         self.qml_log = qml_log
         # queue a notification to QML context that
@@ -133,8 +146,20 @@ class Qt5GUI(GUI):
         # debugging properties
         self.debug_message_content = False
 
+    def get_twitter_api(self, account_username):
+        """Get API instance corresponding to the account username.
+
+        :param str account_username: account username for the API
+        :returns: Twitter api instance corresponding to the account username
+        :raises: TwitterAPIUsernameNotFound
+        """
+        api = api_module.api_manager.get_twitter_api(account_username=account_username)
+        if api is None:
+            raise TwitterAPIUsernameNotFound(account_username)
+        return api
+
     @property
-    def general_purpose_api_username(self):
+    def general_purpose_twitter_api_username(self):
         # Basically one of the accounts for stuff like fetching data for temporary streams
         # or looking up user information. In most cases any valid Twitter account should do.
         # TODO: make this configurable
@@ -143,6 +168,10 @@ class Qt5GUI(GUI):
             self.log.debug("api username for temporary streams: %s", self._temp_stream_api_username)
         return self._temp_stream_api_username
 
+    @property
+    def general_purpose_twitter_api(self):
+        """Get an API for the general purpose account username."""
+        return self.get_twitter_api(self.general_purpose_twitter_api_username)
 
     def _shutdown(self):
         """Called by PyOtherSide once the QML side is shutdown.
@@ -410,7 +439,7 @@ class Streams(object):
         # create temporary source
         hashtag_stream_source = stream_module.TwitterHashtagTweets.new(
             db = self._temp_db,
-            api_username=self.gui.general_purpose_api_username,
+            api_username=self.gui.general_purpose_twitter_api_username,
             hashtag = hashtag
         )
         hashtag_stream_source.cache_messages = False
@@ -436,7 +465,7 @@ class Streams(object):
         # create temporary source
         user_tweet_stream_source = stream_module.TwitterUserTweets.new(
             db = self._temp_db,
-            api_username=self.gui.general_purpose_api_username,
+            api_username=self.gui.general_purpose_twitter_api_username,
             source_username = username
         )
         user_tweet_stream_source.cache_messages = False
@@ -462,7 +491,7 @@ class Streams(object):
         # create temporary source
         user_favorites_stream_source = stream_module.TwitterUserFavorites.new(
             db = self._temp_db,
-            api_username=self.gui.general_purpose_api_username,
+            api_username=self.gui.general_purpose_twitter_api_username,
             source_username = username
         )
         user_favorites_stream_source.cache_messages = False
@@ -535,23 +564,48 @@ class Users(object):
     def get_user_info(self, username):
         """Get information about a user (if available).
 
-        :param str username: screen name of user to lookup
+        :param str username: username of user to lookup
 
-        :return: information about the user (if any)
+        :returns: information about the user (if any)
         :rtype: dict
 
         """
-        result = user_module.get_user_info(self.gui.general_purpose_api_username, username)
+        api = self.gui.general_purpose_twitter_api
+        result = user_module.get_user_info(api, username)
+        # for practical reasons (single call from QML) lets
+        # also include data about the lists the user owns
+        lists = self.get_user_lists(username)
         if result:
-            return result.AsDict()
+            result_dict = result.AsDict()
+            result_dict["owned_list_count"] = len(lists)
+            result_dict["owned_lists"] = lists
+            return result_dict
         else:
             return None
+
+    def get_user_lists(self, username):
+        """Get lists of the given user.
+
+        :param str username: username of user to lookup
+        :returns: list of dicts, each dict corresponding to a list
+        """
+        api = self.gui.general_purpose_twitter_api
+        return [l.AsDict() for l in list_module.get_users_lists(api, username)]
 
 class Accounts(object):
     """Twitter account handling."""
 
     def __init__(self, gui):
         self.gui = gui
+
+    def get_account(self, account_username):
+        """Return an added account by username (if present).
+
+        :param str account_username: account username
+        :returns: dict describing the account or None when account has not been found
+        :rtype: dict or None
+        """
+        return account_module.account_manager.twitter_accounts.get(account_username)
 
     def get_account_list(self):
         """List all Twitter accounts that have been added to Tsubame.
@@ -598,6 +652,92 @@ class Accounts(object):
         :param str account_username: account specified by username
         """
         account_module.account_manager.remove(account_username=account_username)
+
+class Lists(object):
+    """Twitter list handling."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def get_account_lists(self, account_username):
+        """Return information about lists "owned" by an account added to Tsubame.
+
+        Private and public lists will be returned as two separate lists.
+
+        :param str account_username: account username to the the lists for
+        :returns: list of private lists, list of public lists
+        """
+        account_private_lists = []
+        account_public_lists = []
+
+        api = self.gui.get_twitter_api(account_username=account_username)
+        lists = list_module.get_lists(api)
+        # Filter lists to public and private.Also convert the list objects
+        # to dicts for QML to consume when we are at it.
+        for twitter_list in lists:
+            if twitter_list.mode == "private":
+                account_private_lists.append(twitter_list.AsDict())
+            elif twitter_list.mode == "public":
+                account_public_lists.append(twitter_list.AsDict())
+            else:
+                log.error("get_account_lists(): unknown list mode %s, skipping list %s", twitter_list.mode, twitter_list.name)
+        return account_private_lists, account_public_lists
+
+    def create_new_list(self, account_username, list_name, description, private):
+        """Create a new list.
+
+        :param str account_username: account username for API access
+        :param str list_name: name of the new list
+        :param str description: optional list description
+        :param bool private: if the newly created list should be private or public
+        """
+        # if no valid description is empty, indicate that to the API
+        if not description:
+            description = None
+        api = self.gui.get_twitter_api(account_username)
+        list_module.create_list(api=api, list_name=list_name,
+                                description=description, private=private)
+
+    def destroy_list(self, account_username, list_owner_username, list_name):
+        """Remove a list.
+
+        :param str account_username: account username for API access
+        :param str list_owner_username: list owner of the new list
+        :param str list_name: name of the new list
+        """
+        # if no valid description is empty, indicate that to the API
+        api = self.gui.get_twitter_api(account_username)
+        list_module.destroy_list(api=api,
+                                 list_owner_username=list_owner_username,
+                                 list_name=list_name)
+
+    def add_user_to_list(self, account_username, list_owner_username, list_name, username):
+        """Add a user to a list.
+
+        :param str account_username: account username for API access
+        :param str list_owner_username: list owner of the new list
+        :param str list_name: name of the new list
+        :param str username: username of the user to add
+        """
+        api = self.gui.get_twitter_api(account_username)
+        list_module.add_user_to_list(api=api,
+                                     list_owner_username=list_owner_username,
+                                     list_name=list_name,
+                                     username=username)
+
+    def remove_user_from_list(self, account_username, list_owner_username, list_name, username):
+        """Remove user from a list.
+
+        :param str account_username: account username for API access
+        :param str list_owner_username: list owner of the new list
+        :param str list_name: name of the new list
+        :param str username: username of the user to remove from the list
+        """
+        api = get_twitter_api(account_username)
+        list_module.remove_user_from_list(api=api,
+                                          list_owner_username=list_owner_username,
+                                          list_name=list_name,
+                                          username=username)
 
 
 class Search(object):

@@ -23,18 +23,24 @@
 import blitzdb
 from threading import RLock
 from core.base import TsubameBase, TsubamePersistentBase
-from core import api as api_module
+from core import list as list_module
 
-def get_user_info(api_username, username):
+def get_user_info(api, username):
     """Return information about a user specified by screen name.
 
-    :param str api_username: username corresponding to a valid Twitter account Tsubame knows
+    :param api: Twitter API instance
     :param str username: screen name of user to lookup
 
     :return: information about the user (if any)
     """
-    api = api_module.api_manager.get_twitter_api(api_username)
     return api.GetUser(screen_name=username)
+
+def get_user_lists(api, username):
+    """Get lists owned by a user.
+
+    Note that if the user corresponds to the API/account used
+    private lists (if any) will be returned.
+    """
 
 class LocalTwitterUserListData(blitzdb.Document):
     pass
@@ -161,26 +167,27 @@ class RemoteTwitterUserList(UserList):
     local = False
 
     @classmethod
-    def create_new_list(cls, api, data, name, description, private=True):
-        if private:
-            mode = "private"
-        else:
-            mode = "public"
-        api.CreateList(name=name,
-                       mode=mode,
-                       description=description)
+    def create_new_list(cls, api, data, owner_username, name, description=None, private=True):
+        new_list = list_module.create_list(api=api,
+                                           list_name=name,
+                                           description=description,
+                                           private=private)
+        return cls(api=api, list_id=new_list.id, owner_username=owner_username,
+                   name=name, description=description, private=private)
 
-        return cls(api=api, name=name, description=description)
-
-    def __init__(self, api, list_id, name, description=None, private=None):
+    def __init__(self, api, list_id, owner_username, name, description=None, private=None):
         # we don't need persistence for this class just yet
         super(RemoteTwitterUserList, self).__init__(db=None, data=None)
+        self._lock = RLock()
         self._list_id = list_id
         self._api = api
         self._private = private
+        self._owner_username = owner_username
         self._name = name
         self._description = description
-        self._user_ids = None
+        self._members = None
+        # a cache of member usernames for easy membership checking
+        self._member_usernames = set()
 
     @property
     def private(self):
@@ -195,27 +202,58 @@ class RemoteTwitterUserList(UserList):
         return self._name
 
     @property
-    def usernames(self):
-        # TODO: update when changes to the list happen at runtime
-        # - time based ?
-        # - is it possible to check online that the list is still the same ?
-        # - notifications when Tsubame changes the list/list singletons ?
-        if self._user_ids is None:
-            members = self._api.GetListMembers(list_id=self.list_id)
-            self._user_ids = set(m.id for m in members)
-        return self._user_ids
+    def description(self):
+        return self._description
+
+    @property
+    def owner_username(self):
+        return self._owner_username
+
+    def _refresh_member_cache(self):
+        """Refresh the member data and username cache."""
+        self._members = list_module.get_list_members(api=self._api,
+                                                     list_owner_username=self.owner_username,
+                                                     list_name=self.name)
+        self._member_usernames = set(m.id for m in self._members)
+
+    @property
+    def members(self):
+        # TODO: changes could happen outside Tsubame,
+        #       so it would be good to update the local cache,
+        #       especially if we make the list persistent
+        with self._lock:
+            if self._members is None:
+                # member cache not yet created, do it now
+                self._refresh_member_cache()
+            return self._members
 
     def add(self, username):
-        # add the user id to the remote list
-        self._api.CreateListMember(list_id=self.list_id, user_id=username)
-        # add the id to local cache
-        self._user_ids.add(username)
+        """Add a user to the list.
+
+        :param str username: user defined by username to add
+        """
+        with self._lock:
+            list_module.add_user_to_list(api=self._api,
+                                         list_owner_username=self.owner_username,
+                                         list_name=self.name,
+                                         username=username)
+            # update local member cache
+            self._refresh_member_cache()
 
     def remove(self, username):
-        # remove the user user id from the remote list
-        self._api.DestroyListMember(list_id=self.list_id, user_id=username)
-        # remove the user id from the local cache
-        self._user_ids.discard(username)
+        """Remove a user from the list.
+
+        :param str username: user defined by username to remove
+        """
+        with self._lock:
+            # remove the user user id from the remote list
+            list_module.remove_user_from_list(api=self._api,
+                                              list_owner_username=self.owner_username,
+                                              list_name=self.name,
+                                              username=username)
+            # update local member cache
+            self._refresh_member_cache()
+
 
 class LocalTwitterUserList(UserList):
     """A locally stored list of users."""
