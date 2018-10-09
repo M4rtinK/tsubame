@@ -8,6 +8,7 @@ import "functions.js" as F
 BasePage {
     id : userPage
     property bool dataValid : false
+    property bool listDataValid : false
     // If the lookupUsername property is set
     // it means we need to lookup information
     // about the user as it will not be provided
@@ -20,11 +21,15 @@ BasePage {
         "friends_count" : null,
         "followers_count" : null,
         "favourites_count" : null,
-        "owned_list_count" : 0,
         "url" : null,
         "location" : null,
         "time_zone" : null
     }
+    property var lists : {
+        "public_lists" : null,
+        "public_list_count" : 0
+    }
+
     headerText : userPage.dataValid ? "@" + user.screen_name : qsTr("fetching user info")
     headerMenu : TopMenu {
         MenuItem {
@@ -39,16 +44,47 @@ BasePage {
 
     property real horizontalMargin : rWin.c.style.main.spacing
 
+    Component.onCompleted : {
+        if (userPage.dataValid) {
+            // the pre-populated user info does not contain data
+            // about lists, which has to be looked up separately
+            getListInfo(userPage.user.screen_name)
+        }
+    }
+
     onLookupUsernameChanged : {
+        getUserInfo()
+    }
+
+    function getListInfo(listSearchUsername) {
+        if (listSearchUsername) {
+            rWin.python.call("tsubame.gui.users.get_user_lists", [listSearchUsername], function(listInfo){
+                if (listInfo) {
+                    rWin.log.debug("got information about public lists owned user @" + listSearchUsername)
+                    userPage.lists = listInfo
+                } else {
+                    rWin.log.debug("got no information about public lists owned by user @" + listSearchUsername)
+                }
+                // no data found for username is also valid data
+                userPage.listDataValid = true
+            })
+        }
+    }
+
+    function getUserInfo() {
         rWin.python.call("tsubame.gui.users.get_user_info", [lookupUsername], function(userInfo){
             if (userInfo) {
                 rWin.log.debug("got information about user @" + lookupUsername)
                 userPage.user = userInfo
+                // also set public list info which should also be included
+                // in the result
+                userPage.lists = userInfo.public_list_info
             } else {
                 rWin.log.debug("got no information about user @" + lookupUsername)
             }
             // no data found for username is also valid data
             userPage.dataValid = true
+            userPage.listDataValid = true
         })
     }
 
@@ -148,9 +184,9 @@ BasePage {
         ThemedTextRectangle {
             width : parent.width
             height : userTBR.height
-            visible : userPage.dataValid && userPage.user.owned_list_count > 1
+            visible : userPage.listDataValid && userPage.lists.public_list_count > 0
             label.horizontalAlignment : Text.AlignHCenter
-            label.text : "<b>" + qsTr("Lists") + "</b><br>" + userPage.user.owned_list_count
+            label.text : "<b>" + qsTr("Lists") + "</b><br>" + userPage.lists.public_list_count
         }
         ThemedTextRectangle {
             width : parent.width

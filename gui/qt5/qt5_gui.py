@@ -572,25 +572,27 @@ class Users(object):
         """
         api = self.gui.general_purpose_twitter_api
         result = user_module.get_user_info(api, username)
-        # for practical reasons (single call from QML) lets
-        # also include data about the lists the user owns
-        lists = self.get_user_lists(username)
         if result:
             result_dict = result.AsDict()
-            result_dict["owned_list_count"] = len(lists)
-            result_dict["owned_lists"] = lists
+            # also include data about lists the user owns
+            # when we are at it
+            result_dict["public_list_info"] = self.get_user_lists(username)
             return result_dict
         else:
             return None
 
     def get_user_lists(self, username):
-        """Get lists of the given user.
+        """Get public lists of the given user.
 
         :param str username: username of user to lookup
-        :returns: list of dicts, each dict corresponding to a list
+        :returns: dict with information about public lists owned by the user
         """
         api = self.gui.general_purpose_twitter_api
-        return [l.AsDict() for l in list_module.get_users_lists(api, username)]
+        public_lists = [l for l in list_module.get_users_lists(api, username) if l.mode == list_module.TWITTER_LIST_MODE_PUBLIC]
+        return {
+            "public_lists" : [l.AsDict() for l in public_lists],
+            "public_list_count" : len(public_lists)
+        }
 
 class Accounts(object):
     """Twitter account handling."""
@@ -606,6 +608,54 @@ class Accounts(object):
         :rtype: dict or None
         """
         return account_module.account_manager.twitter_accounts.get(account_username)
+
+    def get_lists_owned_by_account(self, account_username):
+        """Return information about lists "owned" by an account added to Tsubame.
+
+        Private and public lists will be returned as two separate lists.
+
+        :param str account_username: account username to the the lists for
+        :returns: dict with information about the lists owned by the account
+        """
+        account_private_lists = []
+        account_public_lists = []
+
+        api = self.gui.get_twitter_api(account_username=account_username)
+        lists = list_module.get_lists(api)
+        # Filter lists to public and private.Also convert the list objects
+        # to dicts for QML to consume when we are at it.
+        for twitter_list in lists:
+            if twitter_list.mode == "private":
+                account_private_lists.append(twitter_list.AsDict())
+            elif twitter_list.mode == "public":
+                account_public_lists.append(twitter_list.AsDict())
+            else:
+                log.error("get_account_lists(): unknown list mode %s, skipping list %s", twitter_list.mode, twitter_list.name)
+
+        return {
+            "private_lists" : account_private_lists,
+            "private_list_count" : len(account_private_lists),
+            "public_lists" : account_public_lists,
+            "public_list_count" : len(account_public_lists)
+        }
+
+    def get_account_user_info(self, account_username):
+        """Get information about Twitter user corresponding to the account.
+
+        :returns: information about the user
+        :rtype: dict
+
+        """
+        api = self.gui.get_twitter_api(account_username)
+        result = user_module.get_user_info(api, account_username)
+        if result:
+            result_dict = result.AsDict()
+            # also include data about lists the user owns
+            # when we are at it
+            result_dict["list_info"] = self.get_lists_owned_by_account(account_username)
+            return result_dict
+        else:
+            return None
 
     def get_account_list(self):
         """List all Twitter accounts that have been added to Tsubame.
@@ -658,30 +708,6 @@ class Lists(object):
 
     def __init__(self, gui):
         self.gui = gui
-
-    def get_account_lists(self, account_username):
-        """Return information about lists "owned" by an account added to Tsubame.
-
-        Private and public lists will be returned as two separate lists.
-
-        :param str account_username: account username to the the lists for
-        :returns: list of private lists, list of public lists
-        """
-        account_private_lists = []
-        account_public_lists = []
-
-        api = self.gui.get_twitter_api(account_username=account_username)
-        lists = list_module.get_lists(api)
-        # Filter lists to public and private.Also convert the list objects
-        # to dicts for QML to consume when we are at it.
-        for twitter_list in lists:
-            if twitter_list.mode == "private":
-                account_private_lists.append(twitter_list.AsDict())
-            elif twitter_list.mode == "public":
-                account_public_lists.append(twitter_list.AsDict())
-            else:
-                log.error("get_account_lists(): unknown list mode %s, skipping list %s", twitter_list.mode, twitter_list.name)
-        return account_private_lists, account_public_lists
 
     def create_new_list(self, account_username, list_name, description, private):
         """Create a new list.

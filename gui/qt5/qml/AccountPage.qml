@@ -24,6 +24,13 @@ BasePage {
         "location" : null,
         "time_zone" : null
     }
+    property var lists : {
+        "private_lists" : null,
+        "private_list_count" : 0,
+        "public_lists" : null,
+        "public_list_count" : 0
+    }
+
     headerText : accountPage.dataValid ? "@" + user.screen_name : qsTr("fetching user info")
     headerMenu : TopMenu {
         MenuItem {
@@ -39,10 +46,11 @@ BasePage {
     property real horizontalMargin : rWin.c.style.main.spacing
 
     onLookupUsernameChanged : {
-        rWin.python.call("tsubame.gui.users.get_user_info", [lookupUsername], function(userInfo){
+        rWin.python.call("tsubame.gui.accounts.get_account_user_info", [lookupUsername], function(userInfo){
             if (userInfo) {
                 rWin.log.debug("got information about user @" + lookupUsername)
                 accountPage.user = userInfo
+                accountPage.lists = userInfo.list_info
             } else {
                 rWin.log.debug("got no information about user @" + lookupUsername)
             }
@@ -142,6 +150,29 @@ BasePage {
                 var userFavoritesPage = rWin.loadPage("UserFavoritesStreamPage")
                 userFavoritesPage.username = accountPage.user.screen_name
                 rWin.pushPageInstance(userFavoritesPage)
+            }
+        }
+
+        Row {
+            id : listsRow
+            visible : accountPage.dataValid
+            width : parent.width
+            spacing : rWin.c.style.main.spacing
+            property int itemWidth : (width - spacing) / 2.0
+
+            ThemedTextRectangle {
+                width : listsRow.itemWidth
+                height : userTBR.height
+                visible : accountPage.dataValid
+                label.horizontalAlignment : Text.AlignHCenter
+                label.text : "<b>" + qsTr("Private Lists") + "</b><br>" + accountPage.lists.private_list_count
+            }
+            ThemedTextRectangle {
+                width : listsRow.itemWidth
+                height : userTBR.height
+                visible : accountPage.dataValid
+                label.horizontalAlignment : Text.AlignHCenter
+                label.text : "<b>" + qsTr("Public Lists") + "</b><br>" + accountPage.lists.public_list_count
             }
         }
         ThemedTextRectangle {

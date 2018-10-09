@@ -33,7 +33,7 @@ def get_lists(api):
     :param api: Twitter API instance
     :returns: list of Twitter list instances
     """
-    return api.GetLists(count=100)
+    return api.GetLists()
 
 def get_users_lists(api, username):
      """Get lists of the given username.
