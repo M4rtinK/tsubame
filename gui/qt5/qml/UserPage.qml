@@ -20,6 +20,7 @@ BasePage {
         "friends_count" : null,
         "followers_count" : null,
         "favourites_count" : null,
+        "owned_list_count" : 0,
         "url" : null,
         "location" : null,
         "time_zone" : null
@@ -143,6 +144,13 @@ BasePage {
                 userFavoritesPage.username = userPage.user.screen_name
                 rWin.pushPageInstance(userFavoritesPage)
             }
+        }
+        ThemedTextRectangle {
+            width : parent.width
+            height : userTBR.height
+            visible : userPage.dataValid && userPage.user.owned_list_count > 1
+            label.horizontalAlignment : Text.AlignHCenter
+            label.text : "<b>" + qsTr("Lists") + "</b><br>" + userPage.user.owned_list_count
         }
         ThemedTextRectangle {
             width : parent.width
