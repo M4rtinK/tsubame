@@ -42,7 +42,7 @@ def get_users_lists(api, username):
      :param str username: return lists owned by this username
      :returns: list of Twitter list instances
      """
-     return api.GetLists(screen_name=username, count=100)
+     return api.GetLists(screen_name=username)
 
 def get_user_list_membership(api, username):
     """Get list of lists the user has been added to.
