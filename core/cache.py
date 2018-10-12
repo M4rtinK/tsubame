@@ -25,6 +25,47 @@ from core.base import TsubamePersistentBase
 import blitzdb
 import twitter
 import copy
+import time
+
+class AccountInfoCache(TsubamePersistentBase):
+    """Cache for user data associated with Tsubame accounts."""
+
+    data_defaults = {
+        "account_username" : None,
+        "user_info" : {},
+        "last_updated" : None  # epoch if set
+    }
+    @classmethod
+    def new(cls, db, account_username):
+        data = AccountInfoCacheData(copy.deepcopy(cls.data_defaults))
+        data.account_username = account_username
+        return cls(db, data)
+
+    @classmethod
+    def from_db(cls, db, account_username):
+        data = db.get(AccountInfoCacheData, {"account_username" : account_username})
+        return cls(db, data)
+
+    def __init__(self, db, data):
+        super(AccountInfoCache, self).__init__(db, data)
+
+    @property
+    def user_info(self):
+        return self.data.user_info
+
+    @user_info.setter
+    def user_info(self, new_user_info):
+        self.data.user_info = new_user_info
+        self.data.last_updated = time.time()
+
+    @property
+    def last_updated(self):
+        return self.data.last_updated
+
+
+class AccountInfoCacheData(blitzdb.Document):
+    pass
+
 
 class MessageCache(TsubamePersistentBase):
 
