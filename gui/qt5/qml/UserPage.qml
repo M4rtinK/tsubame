@@ -44,14 +44,6 @@ BasePage {
 
     property real horizontalMargin : rWin.c.style.main.spacing
 
-    Component.onCompleted : {
-        if (userPage.dataValid) {
-            // the pre-populated user info does not contain data
-            // about lists, which has to be looked up separately
-            getListInfo(userPage.user.screen_name)
-        }
-    }
-
     onLookupUsernameChanged : {
         getUserInfo()
     }
@@ -184,9 +176,9 @@ BasePage {
         ThemedTextRectangle {
             width : parent.width
             height : userTBR.height
-            visible : userPage.listDataValid && userPage.lists.public_list_count > 0
+            visible : userPage.dataValid
             label.horizontalAlignment : Text.AlignHCenter
-            label.text : "<b>" + qsTr("Lists") + "</b><br>" + userPage.lists.public_list_count
+            label.text : "<b>" + qsTr("Lists") + "</b>"
         }
         ThemedTextRectangle {
             width : parent.width
