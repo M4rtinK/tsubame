@@ -166,6 +166,15 @@ BasePage {
                 visible : accountPage.dataValid
                 label.horizontalAlignment : Text.AlignHCenter
                 label.text : "<b>" + qsTr("Private Lists") + "</b><br>" + accountPage.lists.private_list_count
+                onClicked : {
+                    var listsPage = rWin.loadPage("ListsPage", {
+                        "username" : accountPage.lookupUsername,
+                        "accountAvailable" : true,
+                        "privateLists" : true,
+                    })
+                    listsPage.setLists(accountPage.lists.private_lists)
+                    rWin.pushPageInstance(listsPage)
+                }
             }
             ThemedTextRectangle {
                 width : listsRow.itemWidth
@@ -173,6 +182,17 @@ BasePage {
                 visible : accountPage.dataValid
                 label.horizontalAlignment : Text.AlignHCenter
                 label.text : "<b>" + qsTr("Public Lists") + "</b><br>" + accountPage.lists.public_list_count
+                onClicked : {
+                    var listsPage = rWin.loadPage("ListsPage", {
+                        "username" : accountPage.lookupUsername,
+                        "accountAvailable" : true,
+                        "privateLists" : false,
+                    })
+                    listsPage.setLists(accountPage.lists.public_lists)
+                    rWin.pushPageInstance(listsPage)
+                }
+
+
             }
         }
         ThemedTextRectangle {
