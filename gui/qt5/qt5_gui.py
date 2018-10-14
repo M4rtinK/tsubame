@@ -501,6 +501,44 @@ class Streams(object):
         user_favorites_stream.refresh()
         return self._store_temporary_stream(user_favorites_stream)
 
+    def get_list_stream(self, account_username, list_owner_username, list_slug):
+        """ Return a temporary list stream id.
+
+        The id can be used to retrieve stream messages and to
+        remove the stream once it is no longer needed.
+
+        :param account_username: known account username or none to use general purpose account/API
+        :type account_username: str or None
+        :param str list_owner_username: username of the list owner
+        :param str list_slug: safe name of the list
+        :return: id of a temporary list stream
+        """
+        log.debug("creating temp stream: api:%s @%s/%s", account_username, list_owner_username, list_slug)
+
+        log.debug("API USERNAME: %s", account_username)
+
+        if account_username is None:
+            api = self.gui.general_purpose_twitter_api
+        else:
+            api = self.gui.get_twitter_api(account_username)
+
+        # create temporary stream
+        list_stream = stream_module.MessageStream.new(
+            db = self._temp_db,
+            name = "%s@%s/%s" % (account_username, list_owner_username, list_slug)
+        )
+        # create temporary source
+        list_stream_source = stream_module.TwitterRemoteList.new_from_name(
+            db = self._temp_db,
+            api=api,
+            list_owner_username=list_owner_username,
+            list_name=list_slug
+        )
+        list_stream_source.cache_messages = False
+        list_stream.inputs.add(list_stream_source)
+        list_stream.refresh()
+        return self._store_temporary_stream(list_stream)
+
     def _store_temporary_stream(self, stream):
         temporary_stream_id = self.get_temporary_stream_id()
         self._temporary_streams[temporary_stream_id] = stream

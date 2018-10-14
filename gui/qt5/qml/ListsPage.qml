@@ -35,6 +35,24 @@ BasePage {
                     anchors.verticalCenter : parent.verticalCenter
                     horizontalAlignment : Text.AlignHCenter
                 }
+                onClicked : {
+                    // If the account is ours, we need to use it to obtain the
+                    // corresponding API (or else private lists wll not work).
+                    // If it is not ours, we just use one of the available accounts,
+                    // which is specified by passing null instead of account username.
+                    var accountUsername = null
+                    if (listsPage.accountAvailable) {
+                        accountUsername = listsPage.username
+                    }
+                    var listStreamPage = rWin.loadPage("ListStreamPage", {
+                        "accountUsername" : accountUsername,
+                        "listOwnerUsername" : user.screen_name,
+                        "listName" : name,
+                        "listSlug" : slug,
+                        "isPrivate" : listsPage.privateLists
+                    })
+                    rWin.pushPageInstance(listStreamPage)
+                }
             }
         }
     }
