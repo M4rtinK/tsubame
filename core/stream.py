@@ -110,9 +110,13 @@ class TwitterMessageSource(MessageSource):
     data_defaults.update({"api_username" : None,
                           "tweet_cache_pk" : None})
 
-    def __init__(self, db, data):
+    def __init__(self, db, data, api=None):
         super(TwitterMessageSource, self).__init__(db, data)
-        self._api = api_module.api_manager.get_twitter_api(account_username=self.data.api_username)
+        # check if API instance was provided
+        if api:
+            self._api = api
+        else:  # fetch one based on api_username if not
+            self._api = api_module.api_manager.get_twitter_api(account_username=self.data.api_username)
         if self.cache_messages:  # get messages from the cache
             self._init_caching()
             self._messages = self._cache.messages
@@ -301,22 +305,53 @@ class TwitterRemoteList(TwitterMessageSource):
     source_type = SourceTypes.TWITTER_REMOTE_LIST
 
     data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
-    data_defaults.update({"remote_list_id": None})
+    data_defaults.update({"list_id": None,
+                          "list_owner_username": None,
+                          "list_name": None})
 
     @classmethod
-    def new(cls, db, api_username, remote_list_id):
-        data = TwitterUserTweetsData(copy.deepcopy(cls.data_defaults))
-        data.api_username = api_username
-        data.remote_list_id = remote_list_id
-        return cls(db, data)
+    def new_from_name(cls, db, api, list_owner_username, list_name):
+        data = TwitterRemoteListData(copy.deepcopy(cls.data_defaults))
+        data.list_owner_username = list_owner_username
+        data.list_name = list_name
+        return cls(db, data, api=api)
+
+    @classmethod
+    def new_from_list_id(cls, db, api, list_id):
+        data = TwitterRemoteListData(copy.deepcopy(cls.data_defaults))
+        data.list_id = list_id
+        return cls(db, data, api=api)
 
     @property
-    def remote_list_id(self):
-        return self.data.remote_list_id
+    def list_id(self):
+        return self.data.list_id
+
+    @property
+    def list_owner_username(self):
+        return self.data.list_owner_username
+
+    @property
+    def list_name(self):
+        return self.data.list_name
 
     def _do_refresh(self):
-        return self.api.GetListTimeline(list_id=self.remote_list_id)
-
+        self.log.debug("LIST REFRESH")
+        self.log.debug(self.api)
+        self.log.debug(self.list_owner_username)
+        self.log.debug(self.list_name)
+        if self.list_id:
+            return self.api.GetListTimeline(list_id=self.list_id,
+                                            since_id=self.latest_message_id,
+                                            count=200)
+        elif self.list_owner_username and self.list_name:
+            return self.api.GetListTimeline(owner_screen_name=self.list_owner_username,
+                                            slug=self.list_name,
+                                            since_id=self.latest_message_id,
+                                            count=200)
+        else:
+            list_identifier = "@%s/%s" % (self.list_owner_username, self.list_name)
+            self.log.error("can't refresh list %s, id or owner username and list name not set", list_identifier)
+            return None
 
 class TwitterLocalListData(blitzdb.Document):
     pass
