@@ -13,7 +13,8 @@ BasePage {
     // is this a listing of public or private lists ?
     property bool privateLists : false
     property bool isReady: false
-    headerText : username + " " + privateLists ? qsTr("private lists") : qsTr("public lists")
+    property string privatePublicSuffix: privateLists ? "🔒 " + qsTr("private lists") : "📢 " + qsTr("public lists")
+    headerText : username + " " + privatePublicSuffix
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
