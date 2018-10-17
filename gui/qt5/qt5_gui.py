@@ -81,6 +81,7 @@ class Qt5GUI(GUI):
         self.tsubame.notification_triggered.connect(self._dispatch_notification_cb)
 
         self.shutdown = Signal()
+        self.all_classes_instantiated = Signal()
 
         # register exit handler
         #pyotherside.atexit(self._shutdown)
@@ -147,6 +148,9 @@ class Qt5GUI(GUI):
 
         # debugging properties
         self.debug_message_content = False
+
+        # all modules we care for should now be instantiated
+        self.all_classes_instantiated()
 
     def get_twitter_api(self, account_username):
         """Get API instance corresponding to the account username.
@@ -634,10 +638,47 @@ class Users(object):
 class Accounts(object):
     """Twitter account handling."""
 
-    ACCOUNT_INFO_CACHE_TIMEOUT = 900  # in seconds
-
     def __init__(self, gui):
         self.gui = gui
+        self._account_caches = {}
+        self.gui.all_classes_instantiated.connect(self._connect_signals)
+
+    def _connect_signals(self):
+        self.gui.lists.new_list_created.connect(self._on_list_created)
+
+    def _on_list_created(self, account_username, private, list_data):
+        """Callback for the new_list_created signal of the Lists class.
+
+        This updates our account user info cache for the given account."""
+        cache = self._get_account_cache(account_username)
+        if private:
+            cache.add_lists(private_lists=[list_data], public_lists=[])
+        else:
+            cache.add_lists(private_lists=[], public_lists=[list_data])
+        cache.save(commit=True)
+
+    def _get_account_cache(self, account_username):
+        """Return cache object corresponding to the account username.
+
+        :param str account_username: an account username
+
+        NOTE: The cache object can either contain account user data
+              or it might be a freshly created cache object without any data.
+        """
+
+        # first check the local dict
+        cache = self._account_caches.get(account_username)
+        # not yet referenced in local dict
+        if not cache:
+            cache_db = db_module.db_manager.tweet_cache
+            try:
+                cache = cache_module.AccountInfoCache.from_db(db=cache_db, account_username=account_username)
+            except blitzdb.Document.DoesNotExist:
+                log.debug("creating account user info cache for %s", account_username)
+                cache = cache_module.AccountInfoCache.new(db=cache_db, account_username=account_username)
+            self._account_caches[account_username] = cache
+
+        return cache
 
     def get_account(self, account_username):
         """Return an added account by username (if present).
@@ -668,20 +709,16 @@ class Accounts(object):
             lists = []
         # Filter lists to public and private.Also convert the list objects
         # to dicts for QML to consume when we are at it.
-        for twitter_list in lists:
-            if twitter_list.mode == "private":
-                account_private_lists.append(twitter_list.AsDict())
-            elif twitter_list.mode == "public":
-                account_public_lists.append(twitter_list.AsDict())
+        for l in lists:
+            if l.mode == "private":
+                account_private_lists.append(l)
+            elif l.mode == "public":
+                account_public_lists.append(l)
             else:
-                log.error("get_account_lists(): unknown list mode %s, skipping list %s", twitter_list.mode, twitter_list.name)
+                log.error("get_account_lists(): unknown list mode %s, skipping list %s", l.mode, l.name)
 
-        return {
-            "private_lists" : account_private_lists,
-            "private_list_count" : len(account_private_lists),
-            "public_lists" : account_public_lists,
-            "public_list_count" : len(account_public_lists)
-        }
+        return account_private_lists, account_public_lists
+
     def get_account_user_info(self, account_username):
         """Get information about Twitter user corresponding to the account.
 
@@ -693,46 +730,27 @@ class Accounts(object):
         :rtype: dict
         """
 
-        # check if we have user info cache for this account username
-        cache_db = db_module.db_manager.tweet_cache
-        try:
-            cache = cache_module.AccountInfoCache.from_db(db=cache_db, account_username=account_username)
-        except blitzdb.Document.DoesNotExist:
-            log.debug("creating account user info cache for %s", account_username)
-            cache = cache_module.AccountInfoCache.new(db=cache_db, account_username=account_username)
+        # check if we have valid user info cache for this account username
+        cache = self._get_account_cache(account_username)
 
-        cache_valid = cache.user_info and (time.time() - cache.last_updated) < Accounts.ACCOUNT_INFO_CACHE_TIMEOUT
-        if cache_valid:
+        if cache.valid:
             log.debug("returning account user info for %s from cache", account_username)
-            return cache.user_info
         else :  # fetch new info from Twitter API and update the cache before returning user info
             log.debug("refreshing account user info cache for %s", account_username)
-            user_info = self._do_get_account_user_info(account_username=account_username)
+            # dump any cache
+            cache.clear()
+            # get fresh user info
+            api = self.gui.get_twitter_api(account_username)
+            user_info = user_module.get_user_info(api, account_username).AsDict()
+            # get fresh list info
+            private_lists, public_lists = self.get_lists_owned_by_account(account_username)
+            # cache it
+            cache.user_info = user_info
+            cache.add_lists(private_lists=private_lists, public_lists=public_lists)
+            # save the cache
             cache.user_info = user_info
             cache.save(commit=True)
-            return user_info
-
-    def _do_get_account_user_info(self, account_username):
-        """Get information about Twitter user corresponding to the account.
-
-        NOTE: this method does the actual API access
-
-        :returns: information about the user
-        :rtype: dict
-
-        """
-        api = self.gui.get_twitter_api(account_username)
-        result = user_module.get_user_info(api, account_username)
-        if result:
-            result_dict = result.AsDict()
-            # also include data about lists the user owns
-            # when we are at it
-            result_dict["list_info"] = self.get_lists_owned_by_account(account_username)
-            log.debug("RESULT DICT")
-            log.debug(result_dict)
-            return result_dict
-        else:
-            return None
+        return cache.user_info
 
     def get_account_list(self):
         """List all Twitter accounts that have been added to Tsubame.
@@ -785,6 +803,7 @@ class Lists(object):
 
     def __init__(self, gui):
         self.gui = gui
+        self.new_list_created = Signal()
 
     def create_new_list(self, account_username, list_name, description, private):
         """Create a new list.
@@ -798,8 +817,11 @@ class Lists(object):
         if not description:
             description = None
         api = self.gui.get_twitter_api(account_username)
-        list_module.create_list(api=api, list_name=list_name,
+        result = list_module.create_list(api=api, list_name=list_name,
                                 description=description, private=private)
+        # trigger a signal that a new list has been created
+        self.new_list_created(account_username, private, result)
+
 
     def destroy_list(self, account_username, list_owner_username, list_name):
         """Remove a list.

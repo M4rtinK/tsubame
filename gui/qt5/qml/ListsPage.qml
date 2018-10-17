@@ -13,8 +13,21 @@ BasePage {
     // is this a listing of public or private lists ?
     property bool privateLists : false
     property bool isReady: false
-    property string privatePublicSuffix: privateLists ? "🔒 " + qsTr("private lists") : "📢 " + qsTr("public lists")
-    headerText : username + " " + privatePublicSuffix
+    property string privatePublicSymbol: privateLists ? " 🔒 " : " 📢 "
+    headerText : username + privatePublicSymbol + qsTr("lists")
+    headerMenu : TopMenu {
+        MenuItem {
+            text: qsTr("Create list")
+            visible : accountAvailable
+            onClicked : {
+                var createListPage = rWin.loadPage("CreateListPage", {
+                    "accountUsername" : listsPage.username,
+                    "isPrivate" : listsPage.privateLists
+                })
+                rWin.pushPageInstance(createListPage)
+            }
+        }
+    }
     content : ContentColumn {
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
         anchors.rightMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing
@@ -32,7 +45,8 @@ BasePage {
                     id : listLabel
                     property string descriptionLine :  description ? "<br>" + description : ""
                     text : "<b>" + name + "</b>" +  descriptionLine
-                    anchors.horizontalCenter : parent.horizontalCenter
+                    anchors.left : parent.left
+                    anchors.leftMargin : rWin.c.style.main.spacing
                     anchors.verticalCenter : parent.verticalCenter
                     horizontalAlignment : Text.AlignHCenter
                 }

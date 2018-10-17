@@ -26,15 +26,26 @@ import blitzdb
 import twitter
 import copy
 import time
+import operator
 
 class AccountInfoCache(TsubamePersistentBase):
     """Cache for user data associated with Tsubame accounts."""
 
+    CACHE_TIMEOUT = 900  # 15 minutes/one Twitter rate limit window
+
+    PRIVATE_LISTS_KEY = "private_lists"
+    PRIVATE_LIST_COUNT_KEY = "private_list_count"
+    PUBLIC_LISTS_KEY = "public_lists"
+    PUBLIC_LIST_COUNT_KEY = "public_list_count"
+
     data_defaults = {
         "account_username" : None,
         "user_info" : {},
+        "private_lists" : [],
+        "public_lists" : [],
         "last_updated" : None  # epoch if set
     }
+
     @classmethod
     def new(cls, db, account_username):
         data = AccountInfoCacheData(copy.deepcopy(cls.data_defaults))
@@ -49,14 +60,58 @@ class AccountInfoCache(TsubamePersistentBase):
     def __init__(self, db, data):
         super(AccountInfoCache, self).__init__(db, data)
 
+    def clear(self):
+        """Clear the cache."""
+        self.log.debug("clearing account user info cache for %s", self.data.account_username)
+        self.data.user_info.clear()
+        self.data.private_lists.clear()
+        self.data.public_lists.clear()
+
+    @property
+    def valid(self):
+        if not self.last_updated:
+            # never updated - not valid
+            return False
+        elif time.time() - self.last_updated > self.CACHE_TIMEOUT:
+            # timed out - not valid
+            return False
+        elif not self.data.user_info:
+            # no user info - not valid
+            # (even if there is information about lists)
+            return False
+        else:
+            return True
+
     @property
     def user_info(self):
-        return self.data.user_info
+        list_info = {
+            self.PRIVATE_LISTS_KEY : self.data.private_lists,
+            self.PRIVATE_LIST_COUNT_KEY : len(self.data.private_lists),
+            self.PUBLIC_LISTS_KEY : self.data.public_lists,
+            self.PUBLIC_LIST_COUNT_KEY : len(self.data.public_lists)
+        }
+        return self.data.user_info, list_info
 
     @user_info.setter
     def user_info(self, new_user_info):
+        # store the user info
         self.data.user_info = new_user_info
+        # record when the main cache has been created
         self.data.last_updated = time.time()
+
+    def add_lists(self, private_lists, public_lists):
+        """Add more lists to user info cache.
+
+        :param list private_lists: private lists instances to add
+        :param list public_lists: public lists instances to add
+        """
+        for l in private_lists:
+            self.data.private_lists.append(l.AsDict())
+        for l in public_lists:
+            self.data.public_lists.append(l.AsDict())
+        # sort the lists alphabetically by name in place
+        self.data.private_lists.sort(key=operator.itemgetter('name'))
+        self.data.public_lists.sort(key=operator.itemgetter('name'))
 
     @property
     def last_updated(self):

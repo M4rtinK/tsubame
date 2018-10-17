@@ -46,11 +46,11 @@ BasePage {
     property real horizontalMargin : rWin.c.style.main.spacing
 
     onLookupUsernameChanged : {
-        rWin.python.call("tsubame.gui.accounts.get_account_user_info", [lookupUsername], function(userInfo){
+        rWin.python.call("tsubame.gui.accounts.get_account_user_info", [lookupUsername], function(result){
             if (userInfo) {
                 rWin.log.debug("got information about user @" + lookupUsername)
-                accountPage.user = userInfo
-                accountPage.lists = userInfo.list_info
+                accountPage.user = result[0]
+                accountPage.lists = result[1]
             } else {
                 rWin.log.debug("got no information about user @" + lookupUsername)
             }
