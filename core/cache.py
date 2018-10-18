@@ -92,6 +92,14 @@ class AccountInfoCache(TsubamePersistentBase):
         }
         return self.data.user_info, list_info
 
+    @property
+    def private_lists(self):
+        return self.data.private_lists
+
+    @property
+    def public_lists(self):
+        return self.data.private_lists
+
     @user_info.setter
     def user_info(self, new_user_info):
         # store the user info
