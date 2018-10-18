@@ -40,6 +40,15 @@ BasePage {
                 Qt.openUrlExternally(profile_url)
             }
         }
+        MenuItem {
+            text: qsTr("Add to/remove from lists")
+            onClicked : {
+               var alcPage = rWin.loadPage("AccountListCategoriesPage",
+                                           {"membershipUsername" : user.screen_name})
+               rWin.pushPageInstance(alcPage)
+            }
+        }
+
     }
 
     property real horizontalMargin : rWin.c.style.main.spacing
