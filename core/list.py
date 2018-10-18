@@ -35,6 +35,15 @@ def get_lists(api):
     """
     return api.GetLists()
 
+def get_list_membership(api, username):
+    """Get lists of which the username is member owned by the the API-user.
+
+    :param api: Twitter API instance
+    :param str username: username to lookup
+    :returns: list of Twitter list instances of which the username is a member
+    """
+    return api.GetMemberships(screen_name=username, filter_to_owned_lists=True)
+
 def get_users_lists(api, username):
      """Get lists of the given username.
 
