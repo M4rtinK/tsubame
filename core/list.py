@@ -121,7 +121,7 @@ def remove_user_from_list(api, list_owner_username, list_name, username):
     :param str username: username to add to list
     """
     log.debug("removing user %s from list %s owned by %s", username, list_name, list_owner_username)
-    return api.CreateListsMember(slug=list_name, owner_screen_name=list_owner_username,
+    return api.DestroyListsMember(slug=list_name, owner_screen_name=list_owner_username,
                                  screen_name=username)
 
 def get_list_members(api, list_owner_username, list_name):
