@@ -28,7 +28,11 @@ from core.base import TsubameBase
 api_manager = None
 
 class TwitterAccountForAPINotFound(Exception):
-    pass
+    def __init__(self, account_username):
+        self._account_username = account_username
+
+    def __str__(self):
+        return "no API found for account username: %s" % self._account_username
 
 class ApiManager(TsubameBase):
     """Provides access to remote API access points."""
@@ -61,7 +65,7 @@ class ApiManager(TsubameBase):
         if api is None:
             twitter_account = self._account_manager.twitter_accounts.get(account_username)
             if twitter_account is None:
-                raise TwitterAccountForAPINotFound
+                raise TwitterAccountForAPINotFound(account_username)
             api = twitter.Api(consumer_key=self._twitter_consumer_key,
                               consumer_secret=self._twitter_consumer_secret,
                               access_token_key=twitter_account.token,
