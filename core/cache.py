@@ -85,10 +85,10 @@ class AccountInfoCache(TsubamePersistentBase):
     @property
     def user_info(self):
         list_info = {
-            self.PRIVATE_LISTS_KEY : self.data.private_lists,
-            self.PRIVATE_LIST_COUNT_KEY : len(self.data.private_lists),
-            self.PUBLIC_LISTS_KEY : self.data.public_lists,
-            self.PUBLIC_LIST_COUNT_KEY : len(self.data.public_lists)
+            self.PRIVATE_LISTS_KEY : self.private_lists,
+            self.PRIVATE_LIST_COUNT_KEY : len(self.private_lists),
+            self.PUBLIC_LISTS_KEY : self.public_lists,
+            self.PUBLIC_LIST_COUNT_KEY : len(self.public_lists)
         }
         return self.data.user_info, list_info
 
@@ -98,7 +98,7 @@ class AccountInfoCache(TsubamePersistentBase):
 
     @property
     def public_lists(self):
-        return self.data.private_lists
+        return self.data.public_lists
 
     @user_info.setter
     def user_info(self, new_user_info):
