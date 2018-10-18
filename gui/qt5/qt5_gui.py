@@ -689,8 +689,41 @@ class Accounts(object):
         """
         return account_module.account_manager.twitter_accounts.get(account_username)
 
-    def get_lists_owned_by_account(self, account_username):
-        """Return information about lists "owned" by an account added to Tsubame.
+    def check_account_list_membership(self, account_username, username):
+        """Check if a user is member of some lists owned by the given account.
+
+        Return a list of all lists owned by the account and mark lists of which
+        the user is a member.
+
+        :param str account_username: account username
+        :param str username: username for membership test
+        :return: marked up private lists and marked up public lists
+        """
+        api = self.gui.get_twitter_api(account_username=account_username)
+        private_lists, public_lists = self.get_account_lists(account_username)
+        list_membership = list_module.get_list_membership(api, username)
+        membership_set = set([l.slug for l in list_membership])
+        private_lists_with_membership = []
+        public_lists_with_membership = []
+
+        for l in private_lists:
+            d = {
+                "list_info" : l,
+                "is_member" : l["slug"] in membership_set
+            }
+            private_lists_with_membership.append(d)
+
+        for l in private_lists:
+            d = {
+                "list_info" : l,
+                "is_member" : l["slug"] in membership_set
+            }
+            private_lists_with_membership.append(d)
+
+        return private_lists_with_membership, public_lists_with_membership
+
+    def _fetch_lists_owned_by_account(self, account_username):
+        """Fetch information about lists "owned" by an account added to Tsubame from the API.
 
         Private and public lists will be returned as two separate lists.
 
@@ -719,6 +752,7 @@ class Accounts(object):
 
         return account_private_lists, account_public_lists
 
+
     def get_account_user_info(self, account_username):
         """Get information about Twitter user corresponding to the account.
 
@@ -729,6 +763,10 @@ class Accounts(object):
         :returns: information about the user
         :rtype: dict
         """
+        return self._get_account_cache(account_username).user_info
+
+    def _get_cache_for_account(self, account_username):
+        """Return the cached account user info & make sure it is up to date."""
 
         # check if we have valid user info cache for this account username
         cache = self._get_account_cache(account_username)
@@ -743,14 +781,23 @@ class Accounts(object):
             api = self.gui.get_twitter_api(account_username)
             user_info = user_module.get_user_info(api, account_username).AsDict()
             # get fresh list info
-            private_lists, public_lists = self.get_lists_owned_by_account(account_username)
+            private_lists, public_lists = self._fetch_lists_owned_by_account(account_username)
             # cache it
             cache.user_info = user_info
             cache.add_lists(private_lists=private_lists, public_lists=public_lists)
             # save the cache
             cache.user_info = user_info
             cache.save(commit=True)
-        return cache.user_info
+        return cache
+
+    def get_account_lists(self, account_username):
+        """Return private and public lists owned by the account.
+
+        :param str account_username: account username
+        :returns: list of private lists and list of public lists
+        """
+        cache = self._get_cache_for_account(account_username)
+        return cache.private_lists, cache.public_lists
 
     def get_account_list(self):
         """List all Twitter accounts that have been added to Tsubame.
