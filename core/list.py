@@ -73,7 +73,7 @@ def create_list(api, list_name, description=None, private=True):
     :param bool private: True - create private list, False - create public list
     :returns: Twitter list instance
     """
-    log.debug("creating list % (api %s)", list_name, api)
+    log.debug("creating list %s ", list_name)
     list_mode = TWITTER_LIST_MODE_PRIVATE
     if not private:
         list_mode = TWITTER_LIST_MODE_PUBLIC
@@ -86,8 +86,7 @@ def destroy_list(api, list_owner_username, list_name):
     :param str list_owner_username: username of the list owner
     :param str list_name: name of the list
     """
-    log.debug("destroying list % owned by %s (api %s)",
-              list_name, list_owner_username, api)
+    log.debug("destroying list %s owned by %s", list_name, list_owner_username)
     api.DestroyList(owner_screen_name=list_owner_username,
                     slug=list_name)
 
@@ -97,7 +96,7 @@ def destroy_list_by_id(api, list_id):
     :param api: Twitter API instance
     :param str list_id: Twitter provided id of the list
     """
-    log.debug("destroying list with id % (api %s)", list_id, api)
+    log.debug("destroying list with id %s", list_id)
     api.DestroyList(list_id=list_id)
 
 
@@ -109,7 +108,7 @@ def add_user_to_list(api, list_owner_username, list_name, username):
     :param str list_name: name of the list
     :param str username: username to add to list
     """
-    log.debug("adding user %s to list % owned by %s (api %s)", username, list_name, list_owner_username, api)
+    log.debug("adding user %s to list %s owned by %s", username, list_name, list_owner_username)
     return api.CreateListsMember(slug=list_name, owner_screen_name=list_owner_username,
                                  screen_name=username)
 
@@ -121,7 +120,7 @@ def remove_user_from_list(api, list_owner_username, list_name, username):
     :param str list_name: name of the list
     :param str username: username to add to list
     """
-    log.debug("removing user %s from list % owned by %s (api %s)", username, list_name, list_owner_username, api_username)
+    log.debug("removing user %s from list %s owned by %s", username, list_name, list_owner_username)
     return api.CreateListsMember(slug=list_name, owner_screen_name=list_owner_username,
                                  screen_name=username)
 
