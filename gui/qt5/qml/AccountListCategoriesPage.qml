@@ -47,10 +47,11 @@ BasePage {
                             horizontalAlignment : Text.AlignHCenter
                         }
                         onClicked : {
-                            var listMembershipPage = rWin.loadPage("ListMembershipPage")
-                            listMembershipPage.listOwnerUsername = username
-                            listMembershipPage.membershipUsername = membershipUsername
-                            listMembershipPage.privateLists = true
+                            var listMembershipPage = rWin.loadPage("ListMembershipPage", {
+                                "listOwnerUsername" : username,
+                                "membershipUsername" : membershipUsername,
+                                "privateLists" : true
+                            })
                             rWin.pushPageInstance(listMembershipPage)
                         }
                     }
@@ -65,10 +66,11 @@ BasePage {
                             horizontalAlignment : Text.AlignHCenter
                         }
                         onClicked : {
-                            var listMembershipPage = rWin.loadPage("ListMembershipPage")
-                            listMembershipPage.listOwnerUsername = username
-                            listMembershipPage.membershipUsername = membershipUsername
-                            listMembershipPage.privateLists = true
+                            var listMembershipPage = rWin.loadPage("ListMembershipPage", {
+                                "listOwnerUsername" : username,
+                                "membershipUsername" : membershipUsername,
+                                "privateLists" : false
+                            })
                             rWin.pushPageInstance(listMembershipPage)
                         }
                     }

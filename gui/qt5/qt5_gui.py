@@ -700,7 +700,7 @@ class Accounts(object):
         :return: marked up private lists and marked up public lists
         """
         api = self.gui.get_twitter_api(account_username=account_username)
-        private_lists, public_lists = self.get_account_lists(account_username)
+        private_lists, public_lists = self.get_lists_owned_by_account(account_username)
         list_membership = list_module.get_list_membership(api, username)
         membership_set = set([l.slug for l in list_membership])
         private_lists_with_membership = []
@@ -713,12 +713,12 @@ class Accounts(object):
             }
             private_lists_with_membership.append(d)
 
-        for l in private_lists:
+        for l in public_lists:
             d = {
                 "list_info" : l,
                 "is_member" : l["slug"] in membership_set
             }
-            private_lists_with_membership.append(d)
+            public_lists_with_membership.append(d)
 
         return private_lists_with_membership, public_lists_with_membership
 
@@ -748,7 +748,7 @@ class Accounts(object):
             elif l.mode == "public":
                 account_public_lists.append(l)
             else:
-                log.error("get_account_lists(): unknown list mode %s, skipping list %s", l.mode, l.name)
+                log.error("get_lists_owned_by_account(): unknown list mode %s, skipping list %s", l.mode, l.name)
 
         return account_private_lists, account_public_lists
 
@@ -790,7 +790,7 @@ class Accounts(object):
             cache.save(commit=True)
         return cache
 
-    def get_account_lists(self, account_username):
+    def get_lists_owned_by_account(self, account_username):
         """Return private and public lists owned by the account.
 
         :param str account_username: account username
@@ -883,31 +883,29 @@ class Lists(object):
                                  list_owner_username=list_owner_username,
                                  list_name=list_name)
 
-    def add_user_to_list(self, account_username, list_owner_username, list_name, username):
-        """Add a user to a list.
+    def add_user_to_list(self, account_username, list_name, username):
+        """Add a user to a list owned by an account.
 
         :param str account_username: account username for API access
-        :param str list_owner_username: list owner of the new list
         :param str list_name: name of the new list
         :param str username: username of the user to add
         """
         api = self.gui.get_twitter_api(account_username)
         list_module.add_user_to_list(api=api,
-                                     list_owner_username=list_owner_username,
+                                     list_owner_username=account_username,
                                      list_name=list_name,
                                      username=username)
 
-    def remove_user_from_list(self, account_username, list_owner_username, list_name, username):
-        """Remove user from a list.
+    def remove_user_from_list(self, account_username, list_name, username):
+        """Remove user from a list owned by an account.
 
         :param str account_username: account username for API access
-        :param str list_owner_username: list owner of the new list
         :param str list_name: name of the new list
         :param str username: username of the user to remove from the list
         """
-        api = get_twitter_api(account_username)
+        api = self.gui.get_twitter_api(account_username)
         list_module.remove_user_from_list(api=api,
-                                          list_owner_username=list_owner_username,
+                                          list_owner_username=account_username,
                                           list_name=list_name,
                                           username=username)
 
