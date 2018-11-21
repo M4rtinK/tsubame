@@ -1,6 +1,7 @@
 //MessagePage.qml
 
 import QtQuick 2.0
+import QtWebKit 3.0
 import UC 1.0
 import "tsubame_components"
 import "functions.js" as F
@@ -9,6 +10,7 @@ BasePage {
     id : messagePage
     property var message
     headerText : qsTr("Tweet detail")
+    property bool furiganaVisible : false
     headerMenu : TopMenu {
         MenuItem {
             text: qsTr("Open in browser")
@@ -19,6 +21,26 @@ BasePage {
             }
         }
     }
+
+    WebView {
+            id: webView
+            visible : furiganaVisible
+            //anchors.fill : parent
+            y : messagePage.headerHeight + messageContainer.headerHeight
+            width : parent.width
+            height : parent.height
+            MouseArea {
+                anchors.fill : parent
+                onClicked : {
+                    rWin.log.debug("CLICKED")
+                    rWin.log.debug(messageContainer.headerHeight)
+                    rWin.log.debug(content.x)
+                    messagePage.furiganaVisible = false
+                }
+            }
+    }
+
+
     content : ContentColumn {
         anchors.left : parent.left
         anchors.right : parent.right
@@ -36,6 +58,7 @@ BasePage {
             }
         }
         Row {
+            visible : !furiganaVisible
             spacing : rWin.c.style.main.spacing
             Label {
                 visible : messagePage.message.retweet_count != null
@@ -50,8 +73,18 @@ BasePage {
             width : parent.width
             label.horizontalAlignment : Text.AlignHCenter
             property bool messageInJapanese : F.detectJapanese(messagePage.message.full_text)
-            visible : messageInJapanese
-            label.text : qsTr("message is in Japanese")
+            property int webViewFontSize: rWin.isDesktop ? 5 : 100
+            visible : messageInJapanese && !furiganaVisible
+            label.text : qsTr("show furigana")
+            onClicked : {
+
+                rWin.python.call("tsubame.gui.japanese.add_furigana_with_html",
+                                 [messagePage.message.full_text, webViewFontSize],
+                                 function(result){
+                                     webView.loadHtml(result, "")
+                                     furiganaVisible = true
+                                 })
+            }
         }
     }
 }
