@@ -91,6 +91,21 @@ function makeTextClickable(inputString, linksClickable) {
     }
 }
 
+// based on:
+// https://gist.github.com/ryanmcgrath/982242
+function detectJapanese(inputString) {
+    var regex = /[\u3000-\u303F]|[\u3040-\u309F]|[\u30A0-\u30FF]|[\uFF00-\uFFEF]|[\u4E00-\u9FAF]|[\u2605-\u2606]|[\u2190-\u2195]|\u203B/g;
+    var input = inputString;
+    if(regex.test(input)) {
+        // Japanese found in the string!
+        return true
+    }
+    else {
+        // Japanese found in the string!
+        return false
+    }
+}
+
 String.prototype.trunc =
      function(n,useWordBoundary){
          var toLong = this.length>n,

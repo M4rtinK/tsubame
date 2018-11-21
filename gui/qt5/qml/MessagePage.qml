@@ -3,6 +3,7 @@
 import QtQuick 2.0
 import UC 1.0
 import "tsubame_components"
+import "functions.js" as F
 
 BasePage {
     id : messagePage
@@ -44,6 +45,15 @@ BasePage {
                 visible : messagePage.message.favorite_count != null
                 text: "<b>" +  messagePage.message.favorite_count + "</b> " + qsTr("Favorites")
             }
+        }
+        ThemedTextRectangle {
+            //width : userItemsRow.itemWidth
+            width : parent.width
+            //height : userTBR.height
+            label.horizontalAlignment : Text.AlignHCenter
+            property bool messageInJapanese : F.detectJapanese(messagePage.message.full_text)
+            visible : messageInJapanese
+            label.text : qsTr("message is in Japanese")
         }
     }
 }
