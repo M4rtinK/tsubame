@@ -140,6 +140,9 @@ class Qt5GUI(GUI):
         # list handling
         self.lists = Lists(self)
 
+        # Japanese handling
+        self.japanese = Japanese(self)
+
         # log for log messages from the QML context
         self.qml_log = qml_log
         # queue a notification to QML context that
@@ -985,6 +988,29 @@ class Search(object):
                 return None
         else:
             log.error("onlineServices module not found")
+
+class Japanese(object):
+    """Japanese class"""
+    def __init__(self, gui):
+        self.gui = gui
+
+    def add_furigana_with_html(self, japanese_string, font_size):
+        ruby_markup = utils.add_furigana(japanese_string)
+        template = """
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+  </head>
+  <body>
+  <font size=%d>
+  %s
+  </font>
+  </body>
+</html>
+"""
+        html = template % (font_size, ruby_markup)
+        return html
 
 
 class ImageProvider(object):
