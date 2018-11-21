@@ -11,6 +11,8 @@ Column {
     // actually more than just the message - basically everything than the header
     property bool messageClickable : true
     property real horizontalMargin : rWin.c.style.main.spacing
+    // this is a very gross hack for positioning the furigana webview
+    property int headerHeight : headerTBR.height
     ThemedBackgroundRectangle {
         id : headerTBR
         pressed_override : bodyTBR.pressed || mediaTBR.pressed || originTBR.pressed
