@@ -347,3 +347,20 @@ def get_access_token(consumer_key, consumer_secret, open_url_function):
     access_token_key = resp.get('oauth_token')
     access_token_secret = resp.get('oauth_token_secret')
     return access_token_key, access_token_secret
+
+def add_furigana(japanese_string):
+    """Add furigana to all kanji in a string."""
+    from furigana.furigana import split_furigana
+    ruby_markup = ""
+    # TODO: make the index access sane
+    for ch in japanese_string:
+        try:
+            pair = split_furigana(ch)
+        except:
+            pair = [(ch,),(ch,)]
+        if len(pair[0]) == 2:
+            kanji, hira = pair[1]
+            ruby_markup += "<ruby><rb>{}</rb><rt>{}</rt></ruby>".format(kanji, hira)
+        else:
+            ruby_markup += ("{}".format(pair[0][0]))
+    return ruby_markup
