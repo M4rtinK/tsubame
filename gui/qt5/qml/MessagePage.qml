@@ -47,9 +47,7 @@ BasePage {
             }
         }
         ThemedTextRectangle {
-            //width : userItemsRow.itemWidth
             width : parent.width
-            //height : userTBR.height
             label.horizontalAlignment : Text.AlignHCenter
             property bool messageInJapanese : F.detectJapanese(messagePage.message.full_text)
             visible : messageInJapanese
