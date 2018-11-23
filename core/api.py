@@ -21,9 +21,38 @@
 #----------------------------------------------------------------------------
 
 import twitter
+import json
+import logging
+import os
 
 from core import account
 from core.base import TsubameBase
+
+log = logging.getLogger("core.api")
+
+def get_api_key_from_file(file_path):
+    """Get an API key from a json API key file.
+
+    An API key file is a simple json file with a single key called "api_key" holding
+    the api key.
+
+    We use a JSON file instead of something like a unformatted plaintext file
+    for possible extensibility in the future.
+    """
+    api_key = None
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "rt") as f:
+                api_key_json = json.load(f)
+
+                api_key = api_key_json.get("api_key")
+        except:
+            log.exception("API key file parsing failed: %s", file_path)
+    else:
+        log.warning("API key file not found: %s", file_path)
+
+    return api_key
+
 
 api_manager = None
 
