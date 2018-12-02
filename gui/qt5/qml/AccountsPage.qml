@@ -8,6 +8,14 @@ BasePage {
     id : accountsPage
     headerText : qsTr("Accounts")
     property bool fetchingAccountInfo : false
+    headerMenu : TopMenu {
+        MenuItem {
+            text: qsTr("Add an account")
+            onClicked : {
+                rWin.pushPageInstance(rWin.loadPage("AddAccountPage"))
+            }
+        }
+    }
     content : ContentColumn {
         id : accounts
         anchors.leftMargin : rWin.isDesktop ? 0 : rWin.c.style.main.spacing

@@ -18,6 +18,8 @@ BasePage {
         }
     }
 
+    property bool noStreamsAvailable : streamLW.model.count == 0 && !streamListPage.fetchingStreams
+
     backButtonVisible : false
     property bool fetchingStreams : false
 
@@ -58,7 +60,24 @@ BasePage {
         anchors.horizontalCenter : parent.horizontalCenter
         anchors.verticalCenter : parent.verticalCenter
         text : qsTr("<h2>No message streams available.</h2>")
-        visible : streamLW.model.count == 0 && !streamListPage.fetchingStreams
+        visible : noStreamsAvailable && rWin.accountsAvailableAtStartup
+    }
+    Column {
+        id : noAccountsNotice
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        visible : noStreamsAvailable && !rWin.accountsAvailableAtStartup
+        Label {
+            text : qsTr("<h2>No accounts have been added.</h2>")
+            anchors.horizontalCenter : parent.horizontalCenter
+        }
+        Button {
+            text : qsTr("Add an account")
+            anchors.horizontalCenter : parent.horizontalCenter
+            onClicked : {
+                rWin.pushPageInstance(rWin.loadPage("AddAccountPage"))
+            }
+        }
     }
     BusyIndicator {
         anchors.horizontalCenter : parent.horizontalCenter

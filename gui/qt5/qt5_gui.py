@@ -275,7 +275,8 @@ class Qt5GUI(GUI):
             "sailfish" : self.tsubame.platform.platform_id == "jolla",
             "device_type" : self.tsubame.platform.device_type,
             "highDPI" : self.highDPI,
-            "theme" : self.theme
+            "theme" : self.theme,
+            "accounts_available" : len(self.accounts.get_account_list())
         }
         return values
 

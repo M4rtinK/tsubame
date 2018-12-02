@@ -110,6 +110,8 @@ ApplicationWindow {
     // keep alive/wake locks
     property var keepAlive : KeepAlive {}
 
+    // accounts
+    property int accountsAvailableAtStartup : 0
 
     // are we using qrc ?
     property bool qrc : is_qrc()
@@ -417,6 +419,9 @@ ApplicationWindow {
 
         // set device type
         rWin.deviceType = values.device_type
+
+        // set initial account info
+        rWin.accountsAvailableAtStartup = values.accounts_available
 
         // assign to constants
         rWin.c = values.constants
