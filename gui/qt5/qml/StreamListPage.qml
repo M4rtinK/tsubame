@@ -75,7 +75,7 @@ BasePage {
             text : qsTr("Add an account")
             anchors.horizontalCenter : parent.horizontalCenter
             onClicked : {
-                rWin.pushPageInstance(rWin.loadPage("AddAccountPage"))
+                rWin.pushPageInstance(rWin.loadPage("AddTwitterAccountStartPage"))
             }
         }
     }

@@ -37,13 +37,11 @@ from core import api as api_module
 
 # error codes
 class StartupErrorCodes(IntEnum):
-    API_TOKEN_FILE_MISSING=1
-    API_TOKEN_FILE_INACCESSIBLE=2
-    API_TOKEN_FILE_INVALID=3
-    TWITTER_APP_AUTHENTICATION_FAILED=4
-
-# paths
-TWITTER_API_TOKEN_FILE= "app_token.json"
+    UNKNOWN_ERROR = 1
+    API_TOKEN_FILE_MISSING = 64
+    API_TOKEN_FILE_INACCESSIBLE = 65
+    API_TOKEN_FILE_INVALID = 66
+    TWITTER_APP_AUTHENTICATION_FAILED = 67
 
 class Subcommand(Enum):
     ACCOUNT = "account"
@@ -152,7 +150,7 @@ class Startup(object):
                 # try to get the Tsubame user Tokens from Twitter
                 try:
                     consumer_key, consumer_secret = self.get_twitter_app_key()
-                    access_token_key, access_token_secret = utils.get_access_token(
+                    access_token_key, access_token_secret = utils.get_access_token_via_cli(
                         consumer_key=consumer_key, consumer_secret=consumer_secret,
                         open_url_function=self.tsubame.platform.open_url
                     )
@@ -228,36 +226,19 @@ class Startup(object):
         sys.exit(errorCode)
 
     def get_twitter_app_key(self):
-        if os.path.isfile(TWITTER_API_TOKEN_FILE):
-            tokens = {}
-            try:
-                with open(TWITTER_API_TOKEN_FILE, "rt") as token_file:
-                    tokens = json.load(token_file)
-            except Exception:
-                log.exception("Can't open Twitter API token file.")
+        """Get twitter app key values.
 
-                exit(StartupErrorCodes.API_TOKEN_FILE_INACCESSIBLE)
-            twitter_key = tokens.get("consumer_key")
-            twitter_secret = tokens.get("consumer_secret")
-            token_valid = True
-            # do some token validation
-            if twitter_key is None:
-                token_valid = False
-            elif len(twitter_key) <= 0:
-                token_valid = False
-            if twitter_secret is None:
-                token_valid = False
-            elif len(twitter_secret) <= 0:
-                token_valid = False
-
-            if token_valid:
-                return twitter_key, twitter_secret
-            else:
-                log.critical("The Twitter API token file %s is invalid.", TWITTER_API_TOKEN_FILE)
-                exit(StartupErrorCodes.API_TOKEN_FILE_INVALID)
-
-        else:
-            log.critical("Twitter API token file %s is missing!", TWITTER_API_TOKEN_FILE)
+        This method is basically just a wrapper around the function from
+        the api module with some startup related error reporting.
+        """
+        try:
+            twitter_key, twitter_secret = api_module.get_twitter_app_key()
+            return twitter_key, twitter_secret
+        except api_module.APITokenFileInaccessible:
+            exit(StartupErrorCodes.API_TOKEN_FILE_INACCESSIBLE)
+        except api_module.APITokenFileInvalid:
+            exit(StartupErrorCodes.API_TOKEN_FILE_INVALID)
+        except api_module.APITokenFileMissing:
             exit(StartupErrorCodes.API_TOKEN_FILE_MISSING)
-
-
+        except:
+            exit(StartupErrorCodes.UNKNOWN_ERROR)

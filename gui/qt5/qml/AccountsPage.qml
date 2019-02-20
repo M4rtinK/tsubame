@@ -12,7 +12,7 @@ BasePage {
         MenuItem {
             text: qsTr("Add an account")
             onClicked : {
-                rWin.pushPageInstance(rWin.loadPage("AddAccountPage"))
+                rWin.pushPageInstance(rWin.loadPage("AddTwitterAccountStartPage"))
             }
         }
     }
