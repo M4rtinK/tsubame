@@ -929,6 +929,8 @@ class Lists(object):
                                 description=description, private=private)
         # trigger a signal that a new list has been created
         self.new_list_created(account_username, private, result)
+        # and also notify the QML side
+        pyotherside.send("userListCreated", account_username)
 
 
     def destroy_list(self, account_username, list_owner_username, list_name):
@@ -943,6 +945,7 @@ class Lists(object):
         list_module.destroy_list(api=api,
                                  list_owner_username=list_owner_username,
                                  list_name=list_name)
+        pyotherside.send("userListDestroyed", account_username)
 
     def add_user_to_list(self, account_username, list_name, username):
         """Add a user to a list owned by an account.

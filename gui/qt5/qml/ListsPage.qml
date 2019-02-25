@@ -78,6 +78,29 @@ BasePage {
         text : qsTr("<h2>no lists available</h2>")
         visible : listsLW.model.count == 0
     }
+
+    Component.onCompleted : {
+        rWin.python.setHandler("userListCreated", reloadListListing)
+        rWin.python.setHandler("userListDestroyed", reloadListListing)
+    }
+
+    function reloadListListing(listUsername) {
+        // only process lists owned by our current user
+        if (listUsername == listsPage.username) {
+            rWin.log.debug("reloading list listing for user " + listUsername)
+            rWin.python.call("tsubame.gui.accounts.get_account_user_info", [listUsername], function(result){
+                if (result) {
+                    var userLists = result[1]
+                    if (listsPage.privateLists) {
+                        listsPage.setLists(userLists.private_lists)
+                    } else {
+                        listsPage.setLists(userLists.public_lists)
+                    }
+                }
+            })
+        }
+    }
+
     function setLists(lists) {
         // load data about lists into the LW list model
         listsLW.model.clear()
