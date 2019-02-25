@@ -302,7 +302,7 @@ def internal_get_file_contents(path):
             return bytearray(f.read())
 
 # based on example file from python-twitter sources
-def get_access_token(consumer_key, consumer_secret, open_url_function):
+def get_access_token_via_cli(consumer_key, consumer_secret, open_url_function):
     from requests_oauthlib import OAuth1Session
     oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret, callback_uri='oob')
 
@@ -344,6 +344,64 @@ def get_access_token(consumer_key, consumer_secret, open_url_function):
     #         cs=consumer_secret,
     #         atk=resp.get('oauth_token'),
     #         ats=resp.get('oauth_token_secret')))
+    access_token_key = resp.get('oauth_token')
+    access_token_secret = resp.get('oauth_token_secret')
+    return access_token_key, access_token_secret
+
+def get_twitter_auth_url(consumer_key, consumer_secret):
+    """Get Twitter authentication URL.
+
+    The user is supposed to visit the URL and confirm that Tsubame can use his Twitter account.
+    After the confirmation a PIN will be shown to the user, which will be input for the second
+    authentication phase.
+
+    :param str consumer_key: Twitter consumer key
+    :param str consumer_secret: Twitter consumer secret
+    :returns: Twitter authentication URL, oauth token, oauth token secret
+    :rtype: str
+    """
+    from requests_oauthlib import OAuth1Session
+    oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret, callback_uri='oob')
+
+    log.info('requesting temp token from Twitter...')
+
+    try:
+        resp = oauth_client.fetch_request_token(REQUEST_TOKEN_URL)
+    except ValueError as e:
+        log.exception('invalid response from Twitter requesting temp token')
+        return None
+
+    url = oauth_client.authorization_url(AUTHORIZATION_URL)
+    log.info("Twitter auth URL is: %s" % url)
+    return url, resp.get('oauth_token'), resp.get('oauth_token_secret')
+
+def get_twitter_account_access_tokens(consumer_key, consumer_secret, oauth_token, oauth_token_secret, pin_code):
+    """Get Twitter access tokens based on user provided pin code.
+
+    In the previous step the user has confirmed that Tsubame can use his account,
+    ow we use the pin to obtain API access tokens from Twitter.
+    :param str consumer_key: Twitter consumer key
+    :param str consumer_secret: Twitter consumer secret
+    :param str oauth_token: oauth token
+    :param str oauth_token_secret: oauth token secret
+    :param str pin_code: user provided pin code
+    :returns: Twitter access token key and Twitter access secret
+    :rtype: str, str
+    """
+
+    log.info('generating and signing request for an access token...')
+
+    from requests_oauthlib import OAuth1Session
+    oauth_client = OAuth1Session(consumer_key, client_secret=consumer_secret,
+                                 resource_owner_key=oauth_token,
+                                 resource_owner_secret=oauth_token_secret,
+                                 verifier=pin_code)
+    try:
+        resp = oauth_client.fetch_access_token(ACCESS_TOKEN_URL)
+    except ValueError as e:
+        log.exception('invalid response from Twitter requesting temp token')
+        return None
+
     access_token_key = resp.get('oauth_token')
     access_token_secret = resp.get('oauth_token_secret')
     return access_token_key, access_token_secret

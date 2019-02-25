@@ -78,7 +78,7 @@ class Qt5GUI(GUI):
         self._temp_stream_api_username = None
 
         # we handle notifications by forwarding them to the QML context
-        self.tsubame.notification_triggered.connect(self._dispatch_notification_cb)
+        self.tsubame.notification_triggered.connect(self._dispatch_notification)
 
         self.shutdown = Signal()
         self.all_classes_instantiated = Signal()
@@ -202,13 +202,15 @@ class Qt5GUI(GUI):
     def has_notification_support(self):
         return True
 
-    def _dispatch_notification_cb(self, text, ms_timeout=5000):
+    def notify(self, text, ms_timeout=5000):
         """Let the QML context know that it should show a notification.
 
         :param str text: text of the notification message
         :param int ms_timeout: how long to show the notification in ms
         """
+        self._dispatch_notification(text, ms_timeout)
 
+    def _dispatch_notification(self, text, ms_timeout=5000):
         self.log.debug("notify:\n message: %s, timeout: %d" % (text, ms_timeout))
         pyotherside.send("pythonNotify", {
             "message" : newlines2brs(text),  # QML uses <br> in place of \n
@@ -832,7 +834,6 @@ class Accounts(object):
         if not account_name:
             account_name = account_username
 
-        account_module.account_manager.add()
         new_account = account_module.TwitterAccount.new(
             db=self.gui.tsubame.db.main,
             username=account_username,
@@ -841,6 +842,7 @@ class Accounts(object):
             token_secret=access_token_secret
         )
         account_module.account_manager.add(account=new_account)
+        pyotherside.send("accountListChanged")
 
     def remove_account(self, account_username):
         """Remove an account.
@@ -848,6 +850,61 @@ class Accounts(object):
         :param str account_username: account specified by username
         """
         account_module.account_manager.remove(account_username=account_username)
+
+    def authorize_twitter_account(self):
+        """Get Twitter auth URL and then open it in a browser."""
+        #do the OAuth magic and get the authentication URL
+        consumer_key, consumer_secret = api_module.get_twitter_app_key()
+        url, resource_owner_key, resource_owner_secret = utils.get_twitter_auth_url(consumer_key, consumer_secret)
+        # try to open the URL in a browser
+        log.debug("URL")
+        log.debug(url)
+        self.gui.tsubame.platform.open_url(url)
+        return consumer_key, consumer_secret, resource_owner_key, resource_owner_secret
+
+
+    def verify_twitter_account_pin(self, consumer_key, consumer_secret,
+                                   oauth_token, oauth_token_secret,
+                                   pin_code):
+        """Verify a Twitter PIN is valid and return account username if it is.
+
+        :param str consumer_key: consumer key
+        :param str consumer_secret: consumer secret
+        :param str oauth_token: oauth token
+        :param str oauth_token_secret: oauth token secret
+        :param str pin_code: Twitter account authorization PIN
+
+
+        :returns: (access_token_key, access_token_secret, username) tuple on success,
+                  None on failure
+                  TODO: better error reporting ?
+        :rtype: (str, str, str) or None
+        """
+
+        # use the PIN and the bunch of keys to get final account authentication tokens
+        result = utils.get_twitter_account_access_tokens(consumer_key=consumer_key,
+                                                consumer_secret=consumer_secret,
+                                                oauth_token=oauth_token,
+                                                oauth_token_secret=oauth_token_secret,
+                                                pin_code=pin_code)
+        # failed to get the access tokens
+        if result is None:
+            log.error("Twitter PIN verification failed!")
+            return None
+
+        # successfully got the access tokens
+        access_token_key, access_token_secret = result
+
+        # try to access the account & fetch the account username
+        user = api_module.get_twitter_api_user(consumer_key=consumer_key, consumer_secret=consumer_secret,
+                                               access_token_key=access_token_key, access_token_secret=access_token_secret)
+
+        if user is None:
+            log.error("Getting user name for newly authenticated account failed!")
+            return None
+
+        # return the access keys and account username
+        return access_token_key, access_token_secret, user.screen_name
 
 class Lists(object):
     """Twitter list handling."""
