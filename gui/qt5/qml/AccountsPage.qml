@@ -59,6 +59,11 @@ BasePage {
         running : accountsPage.fetchingAccountInfo
     }
     Component.onCompleted : {
+        // reload account list when account list changes
+        rWin.python.setHandler("accountListChanged", function(){
+            getAccounts()
+        })
+        // load account list at startup
         getAccounts()
     }
 

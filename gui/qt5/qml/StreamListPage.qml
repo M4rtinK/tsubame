@@ -86,6 +86,10 @@ BasePage {
         running : streamListPage.fetchingStreams
     }
     Component.onCompleted : {
+        // reload streams when account list changes
+        rWin.python.setHandler("accountListChanged", function(){
+            reload_streams()
+        })
         // get streams from the Python backend
         reload_streams()
     }

@@ -842,6 +842,7 @@ class Accounts(object):
             token_secret=access_token_secret
         )
         account_module.account_manager.add(account=new_account)
+        pyotherside.send("accountListChanged")
 
     def remove_account(self, account_username):
         """Remove an account.
