@@ -332,6 +332,13 @@ class Streams(object):
         self._temporary_stream_id = -1
         self._temporary_stream_id_lock = threading.RLock()
 
+        # forward the stream_list_changed signal to QML
+        stream_module.stream_manager.stream_list_changed.connect(self._stream_list_changed_cb)
+
+    def _stream_list_changed_cb(self):
+        """Forward the stream_list_changed signal to QML."""
+        pyotherside.send("streamListChanged")
+
     def get_temporary_stream_id(self):
         """Atomically return a unique id that can be used to name a temporary stream.
 
