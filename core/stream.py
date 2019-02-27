@@ -526,6 +526,7 @@ class StreamManager(TsubamePersistentBase):
         self._streams_loaded = False
         self._stream_list = []
         self._stream_dict = {}
+        self.stream_list_changed = Signal()
 
         #self._clear_streams()
 
@@ -536,6 +537,7 @@ class StreamManager(TsubamePersistentBase):
             self.db.delete(data)
         self.data.stream_list = []
         self.db.commit()
+        self.stream_list_changed()
         return
 
     def _load_streams(self):
@@ -545,6 +547,7 @@ class StreamManager(TsubamePersistentBase):
                 self._stream_list.append(stream)
                 self._stream_dict[stream.name] = stream
         self._streams_loaded = True
+        self.stream_list_changed()
 
     @property
     def stream_list(self):
@@ -567,6 +570,7 @@ class StreamManager(TsubamePersistentBase):
             self._stream_list.append(stream)
             self.data.stream_list.append(stream.data)
             self.stream_dict[stream.name] = stream
+            self.stream_list_changed()
 
     def delete_stream(self, stream_name):
         with self._lock:
@@ -586,6 +590,7 @@ class StreamManager(TsubamePersistentBase):
                 #
                 # We should also have unit tests for this to make sure the
                 # stream deletion actually works correctly.
+                self.stream_list_changed()
                 return True
             else:
                 self.log.error("can't delete stream - stream name unknown: %s", stream_name)
