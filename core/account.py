@@ -20,8 +20,10 @@
 
 import blitzdb
 from core.base import TsubameBase, TsubamePersistentBase
+from core import stream as stream_module
 
 account_manager = None
+
 
 class TwitterAccountData(blitzdb.Document):
     pass
@@ -122,6 +124,12 @@ class AccountManager(TsubameBase):
         except:
             self.log.exception("can't save added account %s", account)
             return False
+
+        # add some initial default streams for the account
+        # - otherwise the persistent stream list would be initially
+        #   totally empty, even after adding an account and that
+        #   would look bad
+        stream_module.stream_manager.add_default_streams_for_account(account)
 
     def remove(self, account_username):
         account = self._accounts.get(account_username)
