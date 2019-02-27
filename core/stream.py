@@ -591,73 +591,70 @@ class StreamManager(TsubamePersistentBase):
                 self.log.error("can't delete stream - stream name unknown: %s", stream_name)
                 return False
 
-    def add_initial_streams(self):
-        """Add some initial "default" streams.
+    def add_default_streams_for_account(self, twitter_account):
+        """Add some initial "default" streams for an account.
         
-        Generally used to pre-fill the stream list on first application run.
+        Generally used to add account specific default streams (timeline, favorites, retweets)
+        when an account is added.
+
+        :param twitter_account: a Tsubame account wrapper
+        :type twitter_account: Tsubame account wrapper instance
         """
         with self._lock:
-            if account_module.account_manager.twitter_accounts:
-                self.log.info("adding initial Twitter account streams streams.")
-            else:
-                self.log.info("not adding initial Twitter account streams streams"
-                              " - no Twitter accounts have been added to Tsubame")
+            self.log.info("adding initial streams for account: %s", twitter_account)
+            # add the timeline stream
+            timeline_name = "%s timeline" % twitter_account.username
+            timeline_description = "Twitter timeline stream for %s." % twitter_account.username
+            timeline = MessageStream.new(db=self.db,
+                                         name=timeline_name,
+                                         description=timeline_description)
+            # Using own timeline really needs caching (at least for development)
+            # due to the 15 requests/15 minutes rate limit.
+            timeline_source = OwnTwitterTimeline.new(db=self.db,
+                                                    api_username=twitter_account.username)
+            # named streams should have stream caching by default
+            timeline_source.cache_messages = True
+            timeline.inputs.add(timeline_source)
+            self.append_stream(timeline)
 
-            for account in account_module.account_manager.twitter_accounts.values():
-                self.log.info("adding initial streams for account: %s", account)
-                # add the timeline stream
-                timeline_name = "%s timeline" % account.username
-                timeline_description = "Twitter timeline stream for %s." % account.username
-                timeline = MessageStream.new(db=self.db,
-                                             name=timeline_name,
-                                             description=timeline_description)
-                # Using own timeline really needs caching (at least for development)
-                # due to the 15 requests/15 minutes rate limit.
-                timeline_source = OwnTwitterTimeline.new(db=self.db,
-                                                        api_username=account.username)
-                # named streams should have stream caching by default
-                timeline_source.cache_messages = True
-                timeline.inputs.add(timeline_source)
-                self.append_stream(timeline)
+            # add the mentions stream
+            mentions_name = "%s mentions" % twitter_account.username
+            mentions_description = "Twitter mentions stream for %s." % twitter_account.username
+            mentions = MessageStream.new(db=self.db,
+                                         name=mentions_name,
+                                         description=mentions_description)
+            mentions_source = OwnTwitterMentions.new(db=self.db,
+                                                     api_username=twitter_account.username)
+            # named streams should have stream caching by default
+            mentions_source.cache_messages = True
+            mentions.inputs.add(mentions_source)
+            self.append_stream(mentions)
 
-                # add the mentions stream
-                mentions_name = "%s mentions" % account.username
-                mentions_description = "Twitter mentions stream for %s." % account.username
-                mentions = MessageStream.new(db=self.db,
-                                             name=mentions_name,
-                                             description=mentions_description)
-                mentions_source = OwnTwitterMentions.new(db=self.db,
-                                                         api_username=account.username)
-                # named streams should have stream caching by default
-                mentions_source.cache_messages = True
-                mentions.inputs.add(mentions_source)
-                self.append_stream(mentions)
+            # add the favourites stream
+            favourites_name = "%s favourites" % twitter_account.username
+            favourites_description = "Twitter favourites stream for %s." % twitter_account.username
+            favourites = MessageStream.new(db=self.db,
+                                         name=favourites_name,
+                                         description=favourites_description)
+            favourites_source = OwnTwitterFavourites.new(db=self.db,
+                                                     api_username=twitter_account.username)
+            # named streams should have stream caching by default
+            favourites_source.cache_messages = True
+            favourites.inputs.add(favourites_source)
+            self.append_stream(favourites)
 
-                # add the favourites stream
-                favourites_name = "%s favourites" % account.username
-                favourites_description = "Twitter favourites stream for %s." % account.username
-                favourites = MessageStream.new(db=self.db,
-                                             name=favourites_name,
-                                             description=favourites_description)
-                favourites_source = OwnTwitterFavourites.new(db=self.db,
-                                                         api_username=account.username)
-                # named streams should have stream caching by default
-                favourites_source.cache_messages = True
-                favourites.inputs.add(favourites_source)
-                self.append_stream(favourites)
+            # call a refresh on the streams so that they have some content
+            timeline.refresh()
+            mentions.refresh()
+            favourites.refresh()
 
-                # call a refresh on the streams so that they have some content
-                timeline.refresh()
-                mentions.refresh()
-                favourites.refresh()
+            # save the streams
+            timeline.save(commit=True)
+            mentions.save(commit=True)
+            favourites.save(commit=True)
 
-                # save the streams
-                timeline.save(commit=True)
-                mentions.save(commit=True)
-                favourites.save(commit=True)
-
-                # save own state
-                self.save(commit=True)
+            # save own state
+            self.save(commit=True)
 
 
 class InputGroupData(blitzdb.Document):

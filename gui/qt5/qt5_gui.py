@@ -328,10 +328,6 @@ class Streams(object):
         self.gui.log.debug("creating temp db in: %s", db_tempfile)
         self._temp_db = blitzdb.FileBackend(db_tempfile)
 
-        # prevent the stream list populate from running if this is not the initial
-        # get_named_stream_list() call
-        self._first_get_stream_list_run = True
-
         self._temporary_streams = {}
         self._temporary_stream_id = -1
         self._temporary_stream_id_lock = threading.RLock()
@@ -352,12 +348,6 @@ class Streams(object):
     def get_named_stream_list(self):
         """Get list of message streams."""
         stream_list = stream_module.stream_manager.stream_list
-        # Populate the stream list with some initial content if empty.
-        if not stream_list and self._first_get_stream_list_run:
-            self.gui.log.info("stream list is empty - adding initial streams")
-            stream_module.stream_manager.add_initial_streams()
-            stream_list = stream_module.stream_manager.stream_list
-
         stream_dict_list = []
         for stream in stream_list:
             # Convert the list of stream objects to a list of dicts
@@ -366,7 +356,6 @@ class Streams(object):
             # sophisticated later. :)
             stream_dict_list.append(dict(stream.data))
 
-        self._first_get_stream_list_run = False
         return stream_dict_list
 
     def _process_twitter_message(self, message, active_message_id=None):
