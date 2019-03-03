@@ -1,8 +1,14 @@
 language: python
-python:
-  - "3.4"
-  - "3.6"
-  - "3.7"
+
+matrix:
+  include:
+    - python: 3.4
+    - python: 3.5
+    - python: 3.6
+    - python: 3.7
+      dist: xenial
+      sudo: true
+
 install: sudo apt-get install python3-nose
 script:
   - make test NOSETESTS=nosetests3
