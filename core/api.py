@@ -26,7 +26,6 @@ import os
 
 import twitter
 
-from core import account
 from core.base import TsubameBase
 
 log = logging.getLogger("core.api")

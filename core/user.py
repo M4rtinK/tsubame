@@ -22,7 +22,7 @@
 
 import blitzdb
 from threading import RLock
-from core.base import TsubameBase, TsubamePersistentBase
+from core.base import TsubamePersistentBase
 from core import list as list_module
 
 def get_user_info(api, username):

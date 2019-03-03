@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 # Load and store dictionaries as JSON files
-from __future__ import with_statement  # Python 2.5
 
 import os
 import shutil
-import traceback
 from threading import RLock
 
 from core import utils

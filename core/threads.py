@@ -22,7 +22,6 @@
 # Author(s):  Chris Lumens <clumens@redhat.com>
 #
 # modified for use with Tsubame by: Martin Kolman
-from __future__ import with_statement # for python 2.5
 import sys
 
 import threading
