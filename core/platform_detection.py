@@ -1,6 +1,5 @@
 # Tsubame current platform detection
 import os
-import sys
 
 from core import qrc
 from core.constants import PlatformID
@@ -50,9 +49,6 @@ def _try_to_detect_platform():
     if ("i686" in arch) or ("x86_64" in arch):
         log.info("* PC detected")
         return PlatformID.PC # we are most probably on a PC
-    if sys.platform == "qnx6":
-        log.info("* BlackBerry 10 device detected")
-        return PlatformID.BB10
 
     # check procFS
     if os.path.exists("/proc/cpuinfo"):
@@ -62,16 +58,6 @@ def _try_to_detect_platform():
         if "Nokia RX-51" in cpuinfo: # N900
             log.info("* Nokia N900 detected")
             return PlatformID.N900
-        # N9 and N950 share the same device module
-        elif "Nokia RM-680" in cpuinfo: # N950
-            log.info("* Nokia N950 detected")
-            return PlatformID.N9
-        elif "Nokia RM-696" in cpuinfo: # N9
-            log.info("* Nokia N9 detected")
-            return PlatformID.N9
-        elif "GTA02" in cpuinfo: # N9
-            log.info("* Neo FreeRunner GTA02 detected")
-            return PlatformID.NEO
 
     # check lsb_release
     try:
@@ -90,5 +76,3 @@ def _try_to_detect_platform():
         log.exception("running lsb_release during platform detection failed")
 
     return None
-
-
