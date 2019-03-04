@@ -20,7 +20,7 @@
 
 import blitzdb
 from core.base import TsubameBase, TsubamePersistentBase
-from core import stream as stream_module
+from core.signal import Signal
 
 account_manager = None
 
@@ -83,6 +83,7 @@ class AccountManager(TsubameBase):
         super(AccountManager, self).__init__()
         self._accounts = {}
         self._main_db = main_db
+        self.account_added = Signal()
 
         # load stored accounts (if any)
         account_data = self._main_db.filter(TwitterAccountData, {})
@@ -121,15 +122,11 @@ class AccountManager(TsubameBase):
             # add it to tracking
             self._accounts[account.username] = account
             self.log.info("account has been added: %s", account)
+            self.account_added(account)
         except:
             self.log.exception("can't save added account %s", account)
             return False
 
-        # add some initial default streams for the account
-        # - otherwise the persistent stream list would be initially
-        #   totally empty, even after adding an account and that
-        #   would look bad
-        stream_module.stream_manager.add_default_streams_for_account(account)
 
     def remove(self, account_username):
         account = self._accounts.get(account_username)

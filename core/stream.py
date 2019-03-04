@@ -527,6 +527,7 @@ class StreamManager(TsubamePersistentBase):
         self._stream_list = []
         self._stream_dict = {}
         self.stream_list_changed = Signal()
+        account_module.account_manager.account_added.connect(self._new_account_added_cb)
 
         #self._clear_streams()
 
@@ -595,6 +596,13 @@ class StreamManager(TsubamePersistentBase):
             else:
                 self.log.error("can't delete stream - stream name unknown: %s", stream_name)
                 return False
+
+    def _new_account_added_cb(self, account):
+        # add some initial default streams for the account
+        # - otherwise the persistent stream list would be initially
+        #   totally empty, even after adding an account and that
+        #   would look bad
+        self.add_default_streams_for_account(account)
 
     def add_default_streams_for_account(self, twitter_account):
         """Add some initial "default" streams for an account.
