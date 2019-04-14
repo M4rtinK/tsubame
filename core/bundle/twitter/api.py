@@ -292,6 +292,8 @@ class Api(object):
             requests_log.setLevel(logging.DEBUG)
             requests_log.propagate = True
 
+        self._session = requests.Session()
+
     @staticmethod
     def GetAppOnlyAuthToken(consumer_key, consumer_secret):
         """
@@ -1276,7 +1278,7 @@ class Api(object):
         if additional_owners and len(additional_owners) > 100:
             raise TwitterError({'message': 'Maximum of 100 additional owners may be specified for a Media object'})
         if additional_owners:
-            parameters['additional_owners'] = additional_owners
+            parameters['additional_owners'] = ','.join(map(str, additional_owners))
         if media_category:
             parameters['media_category'] = media_category
 
@@ -2065,6 +2067,41 @@ class Api(object):
             post_data['include_entities'] = enf_type('include_entities', bool, include_entities)
         if skip_status:
             post_data['skip_status'] = enf_type('skip_status', bool, skip_status)
+
+        resp = self._RequestUrl(url, 'POST', data=post_data)
+        data = self._ParseAndCheckTwitter(resp.content.decode('utf-8'))
+
+        return User.NewFromJsonDict(data)
+
+    def ReportSpam(self,
+                   user_id=None,
+                   screen_name=None,
+                   perform_block=True):
+        """Report a user as spam on behalf of the authenticated user.
+
+        Args:
+          user_id (int, optional)
+            The numerical ID of the user to report.
+          screen_name (str, optional):
+            The screen name of the user to report.
+          perform_block (bool, optional):
+            Addionally perform a block of reported users. Defaults to True.
+        Returns:
+          twitter.User: twitter.User object representing the blocked/muted user.
+        """
+
+        url = '%s/users/report_spam.json' % (self.base_url)
+        post_data = {}
+
+        if user_id:
+            post_data['user_id'] = enf_type('user_id', int, user_id)
+        elif screen_name:
+            post_data['screen_name'] = screen_name
+        else:
+            raise TwitterError("You must specify either a user_id or screen_name")
+
+        if perform_block:
+            post_data['perform_block'] = enf_type('perform_block', bool, perform_block)
 
         resp = self._RequestUrl(url, 'POST', data=post_data)
         data = self._ParseAndCheckTwitter(resp.content.decode('utf-8'))
@@ -2998,6 +3035,8 @@ class Api(object):
     def PostDirectMessage(self,
                           text,
                           user_id=None,
+                          media_file_path=None,
+                          media_type=None,
                           screen_name=None,
                           return_json=False):
         """Post a twitter direct message from the authenticated user.
@@ -3006,34 +3045,58 @@ class Api(object):
           text: The message text to be posted.
           user_id:
             The ID of the user who should receive the direct message.
+          media_file_path:
+            The file path to the media to be posted
+          media_type:
+            The media type. Accepted media types: dm_image, dm_gif or dm_video
           return_json (bool, optional):
             If True JSON data will be returned, instead of twitter.DirectMessage
         Returns:
           A twitter.DirectMessage instance representing the message posted
         """
         url = '%s/direct_messages/events/new.json' % self.base_url
-
         # Hack to allow some sort of backwards compatibility with older versions
         # part of the fix for Issue #587
         if user_id is None and screen_name is not None:
             user_id = self.GetUser(screen_name=screen_name).id
+
+        # Default
+        message_data_value = {
+            'text': text
+        }
+        if media_file_path is not None:
+            try:
+                media = open(media_file_path, 'rb')
+            except IOError:
+                raise TwitterError({'message': 'Media file could not be opened.'})
+
+            response_media_id = self.UploadMediaChunked(media=media, media_category=media_type)
+
+            # With media
+            message_data_value = {
+                'text': text,
+                "attachment": {
+                    "type": "media",
+                    "media": {
+                        "id": response_media_id
+                    }
+                }
+            }
 
         event = {
             'event': {
                 'type': 'message_create',
                 'message_create': {
                     'target': {
-                        'recipient_id': user_id,
+                        'recipient_id': user_id
                     },
-                    'message_data': {
-                        'text': text
-                    }
+                    'message_data': message_data_value
                 }
             }
         }
 
         resp = self._RequestUrl(url, 'POST', json=event)
-        data = resp.json()
+        data = self._ParseAndCheckTwitter(resp.content.decode('utf-8'))
 
         if return_json:
             return data
@@ -4974,25 +5037,25 @@ class Api(object):
             if data:
                 if 'media_ids' in data:
                     url = self._BuildUrl(url, extra_params={'media_ids': data['media_ids']})
-                    resp = requests.post(url, data=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
+                    resp = self._session.post(url, data=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
                 elif 'media' in data:
-                    resp = requests.post(url, files=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
+                    resp = self._session.post(url, files=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
                 else:
-                    resp = requests.post(url, data=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
+                    resp = self._session.post(url, data=data, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
             elif json:
-                resp = requests.post(url, json=json, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
+                resp = self._session.post(url, json=json, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
             else:
                 resp = 0  # POST request, but without data or json
 
         elif verb == 'GET':
             data['tweet_mode'] = self.tweet_mode
             url = self._BuildUrl(url, extra_params=data)
-            resp = requests.get(url, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
+            resp = self._session.get(url, auth=self.__auth, timeout=self._timeout, proxies=self.proxies)
 
         else:
             resp = 0  # if not a POST or GET request
 
-        if url and self.rate_limit:
+        if url and self.rate_limit and resp:
             limit = resp.headers.get('x-rate-limit-limit', 0)
             remaining = resp.headers.get('x-rate-limit-remaining', 0)
             reset = resp.headers.get('x-rate-limit-reset', 0)
