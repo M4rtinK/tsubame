@@ -20,6 +20,17 @@ BasePage {
                 Qt.openUrlExternally(tweet_url)
             }
         }
+        MenuItem {
+            text : qsTr("Show as text")
+            onClicked : {
+                rWin.log.info('showing Tweet as text: ' + message)
+                var textBoxPage = rWin.loadPage("TextBoxPage", {
+                    "headerText" : qsTr("Tweet text"),
+                    "text" : message.tsubame_message_full_text_plaintext
+                })
+                rWin.pushPageInstance(textBoxPage)
+            }
+        }
     }
 
     WebView {
