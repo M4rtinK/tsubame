@@ -6,13 +6,56 @@ import UC 1.0
 Column {
     id : messageContainer
     property var message
-    signal userInfoClicked
-    signal messageClicked
-    // actually more than just the message - basically everything than the header
+    property bool retweeted : message.tsubame_message_is_retweet
+    property bool quoted : message.tsubame_message_is_quote
+    signal userInfoClicked(var userInfo)
+    signal messageClicked(var clickedMessage)
     property bool messageClickable : true
     property real horizontalMargin : rWin.c.style.main.spacing
     // this is a very gross hack for positioning the furigana webview
     property int headerHeight : headerTBR.height
+
+    function handleMessageClicked () {
+        if (retweeted) {
+            // we need to fake the retweeted message a bit
+            var clickedMessage = messageContainer.message.retweeted_status
+            // set full text & full text plaintext
+            // (this way we don't need to duplicate these in the dict send from Python)
+            clickedMessage.full_text = messageContainer.message.full_text
+            clickedMessage.full_text_plaintext = messageContainer.message.full_text_plaintext
+            // set media
+            clickedMessage.media = messageContainer.message.media
+            // and also make sure this si no longer considered to be a retweet or quote
+            clickedMessage.tsubame_message_is_retweet = false
+            clickedMessage.tsubame_message_is_quote = false
+            // now finally trigger the signal
+            messageContainer.messageClicked(clickedMessage)
+        } else {
+            // this is not a retweet, so we can simply use the message
+            messageContainer.messageClicked(messageContainer.message)
+        }
+    }
+
+    ThemedBackgroundRectangle {
+        width : messageContainer.width
+        height : reTweetLabel.height + rWin.c.style.main.spacing * 3.0
+        visible : messageContainer.retweeted
+        Label {
+            id : reTweetLabel
+            anchors.top : parent.top
+            anchors.topMargin : rWin.c.style.main.spacing
+            anchors.left : parent.left
+            anchors.leftMargin : horizontalMargin
+            text : messageContainer.message.tsubame_retweet_user ?
+                "🔃" + qsTr("Retweeted by") + " <b>" +
+                messageContainer.message.tsubame_retweet_user.name + "</b>"
+            : ""
+        }
+        onClicked : {
+            messageContainer.userInfoClicked(messageContainer.message.tsubame_retweet_user)
+        }
+    }
+
     ThemedBackgroundRectangle {
         id : headerTBR
         pressed_override : bodyTBR.pressed || mediaTBR.pressed || originTBR.pressed
@@ -28,7 +71,7 @@ Column {
             user : messageContainer.message.user
         }
         onClicked : {
-            messageContainer.userInfoClicked()
+            messageContainer.userInfoClicked(messageHeader.user)
         }
     }
     ThemedBackgroundRectangle {
@@ -47,7 +90,7 @@ Column {
             message : messageContainer.message
         }
         onClicked : {
-            messageContainer.messageClicked()
+            handleMessageClicked()
         }
     }
     ThemedBackgroundRectangle {
@@ -67,7 +110,7 @@ Column {
             spacing : rWin.c.style.main.spacing / 2.0
         }
         onClicked : {
-            messageContainer.messageClicked()
+            handleMessageClicked()
         }
     }
     ThemedBackgroundRectangle {
@@ -86,7 +129,7 @@ Column {
             message : messageContainer.message
         }
         onClicked : {
-            messageContainer.messageClicked()
+            handleMessageClicked()
         }
     }
 }

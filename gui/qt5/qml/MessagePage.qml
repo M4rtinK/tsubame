@@ -11,22 +11,28 @@ BasePage {
     property var message
     headerText : qsTr("Tweet detail")
     property bool furiganaVisible : false
+    property string tweetURL : "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
     headerMenu : TopMenu {
         MenuItem {
             text: qsTr("Open in browser")
             onClicked : {
                 rWin.log.info('opening Tweet in browser: ' + message)
-                var tweet_url = "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
-                Qt.openUrlExternally(tweet_url)
+                Qt.openUrlExternally(messagePage.tweetURL)
             }
         }
         MenuItem {
             text : qsTr("Show as text")
             onClicked : {
                 rWin.log.info('showing Tweet as text: ' + message)
+                var messagePlaintext = ""
+                messagePlaintext += messagePage.tweetURL
+                messagePlaintext += "\n"
+                messagePlaintext += "\n"
+                messagePlaintext += message.tsubame_message_full_text_plaintext
+                // TODO: add media URLs ?
                 var textBoxPage = rWin.loadPage("TextBoxPage", {
                     "headerText" : qsTr("Tweet text"),
-                    "text" : message.tsubame_message_full_text_plaintext
+                    "text" : messagePlaintext
                 })
                 rWin.pushPageInstance(textBoxPage)
             }
@@ -64,7 +70,7 @@ BasePage {
             width : messagePage.width - rWin.c.style.main.spacing * 2
             onUserInfoClicked : {
                         rWin.log.info("user info clicked")
-                        var userPage = rWin.loadPage("UserPage", {"user" : messagePage.message.user, "dataValid" : true})
+                        var userPage = rWin.loadPage("UserPage", {"user" : userInfo, "dataValid" : true})
                         rWin.pushPageInstance(userPage)
             }
         }

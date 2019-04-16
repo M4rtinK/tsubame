@@ -365,22 +365,27 @@ class Streams(object):
 
         return stream_dict_list
 
-    def _process_twitter_message(self, message, active_message_id=None):
-        """Turn the twitter message to dict and apply any Tsubame related tweaks."""
-        message_dict = message.AsDict()
-        matches_active_id = active_message_id and message_dict.get("id_str") == active_message_id
+    def _process_twitter_message_text(self, full_text, message_dict):
+        """Process a Twitter message text.
+
+        We have a separate method for this as we might need to process both "regular" messages,
+        retweets and quoted messages.
+
+        :param str full_text: full text of the message as returned by the Twitter API vy python-twitter
+        :param dict message_dict: message data in dict form
+        :return: processed message full text
+        :rtype: str
+        """
 
         # make normal URLs clickable
         for url in message_dict.get("urls", []):
-            full_text = message_dict["full_text"]
             short_url = url["url"]
             link = '<a href="%s">%s</a>' % (url["expanded_url"], url["expanded_url"])
-            message_dict["full_text"] = full_text.replace(short_url, link)
+            full_text = full_text.replace(short_url, link)
 
         # drop media URLs as we show a per-media detail page
         for medium in message_dict.get("media", []):
-            full_text = message_dict["full_text"]
-            message_dict["full_text"] = full_text.replace(medium["url"], "").rstrip()
+            full_text = full_text.replace(medium["url"], "").rstrip()
 
         # make hashtags clickable
         # - we cant really do this with regexps on the QML side as the Javascript regexps
@@ -388,38 +393,54 @@ class Streams(object):
         # - if this even turns into a bottleneck we can likely move these substitutions
         #   to the delegate on the QML side
         for hashtag in message_dict.get("hashtags", []):
-            full_text = message_dict["full_text"]
             hashtag_string = hashtag["text"]
             link = '<a href="#%s">#%s</a>' % (hashtag_string, hashtag_string)
-            message_dict["full_text"] = full_text.replace("#" + hashtag_string, link)
+            full_text = full_text.replace("#" + hashtag_string, link)
 
+        # drop hyperlinks from the full tweet text & append it
+        full_text_plaintext= REMOVE_HTML_RE.sub("", full_text)
 
+        return full_text, full_text_plaintext
+
+    def _process_twitter_message(self, message, active_message_id=None):
+        """Turn the twitter message to dict and apply any Tsubame related tweaks."""
+        message_dict = message.AsDict()
+        matches_active_id = active_message_id and message_dict.get("id_str") == active_message_id
+
+        is_retweet = False
+        is_quote = False
+        nested_user = None
+        # check if this is a simple retweet (without added content)
+        retweeted_status = message_dict.get("retweeted_status")
+        if retweeted_status:
+            is_retweet = True
+            # in this case we don't need to care about the retweet full text (it's likely truncated anyway)
+            # but instead just process the text from the original tweet
+            full_text, full_text_plaintext = self._process_twitter_message_text(retweeted_status["full_text"], message_dict)
+            message_dict["retweeted_status"]["tsubame_message_created_at_epoch"] = message.retweeted_status.created_at_in_seconds
+            message_dict["retweeted_status"]["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.retweeted_status.source)
+            # record the user who did the retweet
+            message_dict["tsubame_retweet_user"] = message_dict["user"]
+            # set the original user as the top level user
+            message_dict["user"] = message_dict["retweeted_status"]["user"]
+        else:
+            full_text, full_text_plaintext = self._process_twitter_message_text(message_dict["full_text"], message_dict)
+            quoted_status = message_dict.get("quoted_status")
+            if quoted_status:
+                is_quote = True
+                # also process the text for the quoted status
+                full_text, full_text_plaintext = self._process_twitter_message_text(quoted_status["full_text"], message_dict)
+                message_dict["quoted_status"]["full_text"] = full_text
+                message_dict["quoted_status"]["tsubame_full_text_plaintext"] = full_text_plaintext
+                message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
+
+        message_dict["full_text"] = full_text
+        message_dict["tsubame_message_is_retweet"] = is_retweet
+        message_dict["tsubame_message_is_quote"] = is_quote
         message_dict["tsubame_message_type"] = constants.MessageType.TWEET.value
         message_dict["tsubame_message_created_at_epoch"] = message.created_at_in_seconds
         message_dict["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.source)
-
-        # for the "show Tweet as text" feature we need to keep a plaintext version of the tweet
-        # around with a few adjustments
-        full_text_plaintext=""
-
-        # start by the url, which also contains username
-        tweet_url = "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
-        full_text_plaintext+="%s\n\n" % tweet_url
-
-        # drop hyperlinks from the full tweet text & append it
-        full_text_plaintext+= REMOVE_HTML_RE.sub("", message_dict["full_text"])
-
-        # add links to all media used in message
-        media = message_dict.get("media", [])
-        if media:
-            full_text_plaintext+="\n\nmedia:"
-            for medium in message_dict.get("media", []):
-                full_text_plaintext+="\n%s" % medium["media_url_https"]
-        # put it to the resulting dir
         message_dict["tsubame_message_full_text_plaintext"] = full_text_plaintext
-        # NOTE: We are doing this for *every* message, even though it might not always
-        #       be used. Hopefully the performance impact would not be big, otherwise
-        #       an on-demand method might be needed.
         return message_dict, matches_active_id
 
     def get_stream_messages(self, stream_name, temporary=False):

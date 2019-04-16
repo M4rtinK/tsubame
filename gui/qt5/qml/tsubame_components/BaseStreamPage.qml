@@ -68,12 +68,12 @@ BasePage {
                     width : messageDelegate.width
                     onMessageClicked : {
                         rWin.log.info("message clicked")
-                        var messagePage = rWin.loadPage("MessagePage", {"message" : messageData})
+                        var messagePage = rWin.loadPage("MessagePage", {"message" : clickedMessage})
                         rWin.pushPageInstance(messagePage)
                     }
                     onUserInfoClicked : {
                         rWin.log.info("user info clicked")
-                        var userPage = rWin.loadPage("UserPage", {"user" : messageData.user, "dataValid" : true})
+                        var userPage = rWin.loadPage("UserPage", {"user" : userInfo, "dataValid" : true})
                         rWin.pushPageInstance(userPage)
                     }
                 }
