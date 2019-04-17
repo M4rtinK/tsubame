@@ -439,7 +439,7 @@ class Streams(object):
                 message_dict["quoted_status"]["tsubame_full_text_plaintext"] = quoted_full_text_plaintext
                 message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
                 message_dict["quoted_status"]["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.quoted_status.source)
-                message_dict["quoted_status"]["tsubame_message_full_text_plaintext"] = full_text_plaintext
+                message_dict["quoted_status"]["tsubame_message_full_text_plaintext"] = quoted_full_text_plaintext
 
         message_dict["full_text"] = full_text
         message_dict["tsubame_message_is_retweet"] = is_retweet
