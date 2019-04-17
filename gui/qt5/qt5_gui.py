@@ -397,6 +397,11 @@ class Streams(object):
             link = '<a href="#%s">#%s</a>' % (hashtag_string, hashtag_string)
             full_text = full_text.replace("#" + hashtag_string, link)
 
+        # QML needs <br> in place of \n and ignores any \n it finds, so we need to adjust the
+        # full message text accordingly. At least we can avoid doing that twice for the
+        # plaintext version as well.
+        full_text = full_text.replace("\n", "<br>")
+
         # drop hyperlinks from the full tweet text & append it
         full_text_plaintext= REMOVE_HTML_RE.sub("", full_text)
 
