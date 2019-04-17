@@ -397,13 +397,13 @@ class Streams(object):
             link = '<a href="#%s">#%s</a>' % (hashtag_string, hashtag_string)
             full_text = full_text.replace("#" + hashtag_string, link)
 
-        # QML needs <br> in place of \n and ignores any \n it finds, so we need to adjust the
+        # drop hyperlinks from the full tweet text & append it
+        full_text_plaintext= REMOVE_HTML_RE.sub("", full_text)
+
+         # QML needs <br> in place of \n and ignores any \n it finds, so we need to adjust the
         # full message text accordingly. At least we can avoid doing that twice for the
         # plaintext version as well.
         full_text = full_text.replace("\n", "<br>")
-
-        # drop hyperlinks from the full tweet text & append it
-        full_text_plaintext= REMOVE_HTML_RE.sub("", full_text)
 
         return full_text, full_text_plaintext
 
@@ -429,16 +429,18 @@ class Streams(object):
             message_dict["tsubame_retweet_user"] = message_dict["user"]
             # set the original user as the top level user
             message_dict["user"] = message_dict["retweeted_status"]["user"]
-        elif quoted_status:
-            is_quote = True
-            # also process the text for the quoted status
-            quoted_full_text, quoted_full_text_plaintext = self._process_twitter_message_text(quoted_status["full_text"], message_dict)
-            message_dict["quoted_status"]["full_text"] = quoted_full_text
-            message_dict["quoted_status"]["tsubame_full_text_plaintext"] = quoted_full_text_plaintext
-            message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
-            message_dict["quoted_status"]["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.quoted_status.source)
+        else:
+            full_text, full_text_plaintext = self._process_twitter_message_text(message_dict["full_text"], message_dict)
+            if quoted_status:
+                is_quote = True
+                # also process the text for the quoted status
+                quoted_full_text, quoted_full_text_plaintext = self._process_twitter_message_text(quoted_status["full_text"], message_dict)
+                message_dict["quoted_status"]["full_text"] = quoted_full_text
+                message_dict["quoted_status"]["tsubame_full_text_plaintext"] = quoted_full_text_plaintext
+                message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
+                message_dict["quoted_status"]["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.quoted_status.source)
+                message_dict["quoted_status"]["tsubame_message_full_text_plaintext"] = full_text_plaintext
 
-        full_text, full_text_plaintext = self._process_twitter_message_text(message_dict["full_text"], message_dict)
         message_dict["full_text"] = full_text
         message_dict["tsubame_message_is_retweet"] = is_retweet
         message_dict["tsubame_message_is_quote"] = is_quote
