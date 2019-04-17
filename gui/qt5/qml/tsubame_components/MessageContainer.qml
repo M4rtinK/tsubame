@@ -22,7 +22,7 @@ Column {
             // set full text & full text plaintext
             // (this way we don't need to duplicate these in the dict send from Python)
             clickedMessage.full_text = messageContainer.message.full_text
-            clickedMessage.tsubame_full_text_plaintext = messageContainer.message.full_text_plaintext
+            clickedMessage.tsubame_message_full_text_plaintext = messageContainer.message.tsubame_message_full_text_plaintext
             // set media
             clickedMessage.media = messageContainer.message.media
             // and also make sure this si no longer considered to be a retweet or quote
