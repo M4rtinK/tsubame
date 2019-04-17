@@ -417,6 +417,7 @@ class Streams(object):
         nested_user = None
         # check if this is a simple retweet (without added content)
         retweeted_status = message_dict.get("retweeted_status")
+        quoted_status = message_dict.get("quoted_status")
         if retweeted_status:
             is_retweet = True
             # in this case we don't need to care about the retweet full text (it's likely truncated anyway)
@@ -428,17 +429,16 @@ class Streams(object):
             message_dict["tsubame_retweet_user"] = message_dict["user"]
             # set the original user as the top level user
             message_dict["user"] = message_dict["retweeted_status"]["user"]
-        else:
-            full_text, full_text_plaintext = self._process_twitter_message_text(message_dict["full_text"], message_dict)
-            quoted_status = message_dict.get("quoted_status")
-            if quoted_status:
-                is_quote = True
-                # also process the text for the quoted status
-                full_text, full_text_plaintext = self._process_twitter_message_text(quoted_status["full_text"], message_dict)
-                message_dict["quoted_status"]["full_text"] = full_text
-                message_dict["quoted_status"]["tsubame_full_text_plaintext"] = full_text_plaintext
-                message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
+        elif quoted_status:
+            is_quote = True
+            # also process the text for the quoted status
+            quoted_full_text, quoted_full_text_plaintext = self._process_twitter_message_text(quoted_status["full_text"], message_dict)
+            message_dict["quoted_status"]["full_text"] = quoted_full_text
+            message_dict["quoted_status"]["tsubame_full_text_plaintext"] = quoted_full_text_plaintext
+            message_dict["quoted_status"]["tsubame_message_created_at_epoch"] = message.quoted_status.created_at_in_seconds
+            message_dict["quoted_status"]["tsubame_message_source_plaintext"] = REMOVE_HTML_RE.sub("", message.quoted_status.source)
 
+        full_text, full_text_plaintext = self._process_twitter_message_text(message_dict["full_text"], message_dict)
         message_dict["full_text"] = full_text
         message_dict["tsubame_message_is_retweet"] = is_retweet
         message_dict["tsubame_message_is_quote"] = is_quote
