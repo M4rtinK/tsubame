@@ -67,8 +67,13 @@ BaseStreamPage {
         var modelIndex = namedStreamPage.indexAt(namedStreamPage.contentY)
         if (modelIndex != null) {
             rWin.log.info("saving stream index: " + modelIndex)
-            var data = namedStreamPage.getItem(modelIndex).messageData
-            rWin.python.call("tsubame.gui.streams.set_stream_active_message", [streamName, data], function(){})
+            var item = namedStreamPage.getItem(modelIndex)
+            if (item) {
+                var data = item.messageData
+                rWin.python.call("tsubame.gui.streams.set_stream_active_message", [streamName, data], function(){})
+            } else {
+                rWin.log.error("can't save stream index, nod data for: " + modelIndex)
+            }
         }
     }
 }
