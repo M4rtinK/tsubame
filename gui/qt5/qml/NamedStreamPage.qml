@@ -44,7 +44,7 @@ BaseStreamPage {
         }
     }
     onListViewMovementEnded : {
-         // save active message a while after last list
+        // save active message a while after last list
         // via timer to avoid backend spamming
         // TODO: also save after relevant key presses
         saveActiveMessageTimer.restart()
