@@ -1,5 +1,7 @@
 // ThemedBackgroundRectangle.qml
 // A background rectangle that respects the modRana theme.
+
+import QtQuick 2.0
 import UC 1.0
 
 ThemedBackgroundRectangle {
