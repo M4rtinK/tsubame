@@ -7,7 +7,6 @@ import "../functions.js" as F
 Label {
     id: messageText
     property var message
-    width : messageDelegate.width - rWin.c.style.main.spacing * 2
     text : (message != null) ? F.makeUsernamesClickable(message.full_text, false) : ""
     wrapMode : Text.Wrap
     textFormat : Text.StyledText
