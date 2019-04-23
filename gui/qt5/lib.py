@@ -19,6 +19,8 @@
 
 import re
 
+from core import constants
+
 REMOVE_HTML_RE = re.compile(r'<[^<]+?>')
 
 def process_twitter_message_text(full_text, message_dict):
