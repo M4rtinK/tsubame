@@ -14,13 +14,6 @@ BasePage {
     property string tweetURL : "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
     headerMenu : TopMenu {
         MenuItem {
-            text: qsTr("Open in browser")
-            onClicked : {
-                rWin.log.info('opening Tweet in browser: ' + message)
-                Qt.openUrlExternally(messagePage.tweetURL)
-            }
-        }
-        MenuItem {
             text : qsTr("Show as text")
             onClicked : {
                 rWin.log.info('showing Tweet as text: ' + message)
@@ -35,6 +28,13 @@ BasePage {
                     "text" : messagePlaintext
                 })
                 rWin.pushPageInstance(textBoxPage)
+            }
+        }
+        MenuItem {
+            text: qsTr("Open in browser")
+            onClicked : {
+                rWin.log.info('opening Tweet in browser: ' + message)
+                Qt.openUrlExternally(messagePage.tweetURL)
             }
         }
     }
