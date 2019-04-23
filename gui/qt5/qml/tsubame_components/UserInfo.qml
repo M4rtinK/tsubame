@@ -8,7 +8,7 @@ Row {
     spacing : rWin.c.style.main.spacing * 1.5
     Image {
         id : userAvatar
-        source : user.profile_image_url
+        source : user.profile_image_url ? user.profile_image_url : ""
         width : 48 * rWin.c.style.m
         height : 48 * rWin.c.style.m
         smooth : true
