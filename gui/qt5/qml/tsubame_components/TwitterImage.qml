@@ -6,12 +6,13 @@ import QtQuick 2.0
 import UC 1.0
 
 MouseArea {
-    id: container
+    id: tweetImage
     property alias source: image.source
     property alias image: image
     property alias progress: image.progress
     property alias status: image.status
-
+    // is this a thumbnail for a video ?
+    property bool video: false
     BackgroundRectangle {
         id: background
         anchors.fill: parent
@@ -23,7 +24,6 @@ MouseArea {
             FadeAnimator {}
         }
     }
-
     Label {
         id: loadingProgressLabel
         anchors.horizontalCenter : parent.horizontalCenter
@@ -31,7 +31,6 @@ MouseArea {
         text : image.status == Image.Error ? qsTr("<b>Image loading failed.</b>") : "<b>" + Math.round(image.progress * 100) + " %</b>"
         visible : image.status == Image.Loading || image.status == Image.Error
     }
-
     Image {
         id: image
         anchors.fill: parent
@@ -58,6 +57,26 @@ MouseArea {
 
         Behavior on opacity {
             FadeAnimator {}
+        }
+    }
+    ThemedBackgroundRectangle {
+        id: playRectangle
+        width : 64 * rWin.c.style.m
+        height : 64 * rWin.c.style.m
+        cornerRadius : width * 0.5 // lets make this into a circle
+        borderWidth : 4 * rWin.c.style.m
+        anchors.horizontalCenter : parent.horizontalCenter
+        anchors.verticalCenter : parent.verticalCenter
+        visible : image.status == Image.Ready && tweetImage.video
+        Label {
+            id: playEmoji
+            text: "▶️"
+            anchors.horizontalCenter : parent.horizontalCenter
+            anchors.verticalCenter : parent.verticalCenter
+        }
+        onClicked : {
+            // redirect clicks to the main mouse area
+            tweetImage.clicked(mouse)
         }
     }
 

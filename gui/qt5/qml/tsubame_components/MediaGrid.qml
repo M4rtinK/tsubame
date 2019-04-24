@@ -69,13 +69,27 @@ Grid {
             // TODO: switch suffix based on requested image size
             //       - should be doable as we known what size corresponds to which suffix
             source: modelData.media_url_https + ":large"
+            video: modelData.type == "video" || modelData.type == "animated_gif"
 
             onClicked : {
                 rWin.log.debug("image clicked: " + index)
-                var imageBrowser = rWin.loadPage("ImageBrowserPage")
-                imageBrowser.mediaList = mediaGrid.mediaList
-                imageBrowser.imageIndex = index
-                rWin.pushPageInstance(imageBrowser)
+                if (video) {
+                    rWin.log.debug("image is video thumbnail")
+                    // lets just use the first variant, we can implement
+                    // sorting by quality later
+                    var videoUrl = modelData.video_info.variants[0].url
+                    var mediaPage = rWin.loadPage("VideoPage", {
+                        "videoUrl" : videoUrl
+                    })
+                    rWin.log.debug("VIDEO URL")
+                    rWin.log.debug(videoUrl)
+                } else {
+                    var mediaPage = rWin.loadPage("ImageBrowserPage", {
+                        "mediaList" : mediaGrid.mediaList,
+                        "imageIndex" : index
+                    })
+                }
+                rWin.pushPageInstance(mediaPage)
             }
         }
     }
