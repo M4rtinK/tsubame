@@ -29,6 +29,7 @@ BasePage {
         MediaPlayer {
             id : mediaPlayer
             source : videoPage.videoUrl
+            audioRole : MediaPlayer.VideoRole
             // TODO: start playing only once play is pressed
             autoLoad : true
             autoPlay : true
