@@ -6,6 +6,7 @@ import QtQuick 2.0
 import QtMultimedia 5.6
 import UC 1.0
 import "tsubame_components"
+import "moment.js" as M
 
 BasePage {
     id: videoPage
@@ -20,6 +21,7 @@ BasePage {
         }
     }
     property string videoUrl : ""
+    property string previewImageUrl : ""
 
     content : Item {
         height : videoPage.height
@@ -32,7 +34,7 @@ BasePage {
             audioRole : MediaPlayer.VideoRole
             // TODO: start playing only once play is pressed
             autoLoad : true
-            autoPlay : true
+            autoPlay : false
             // sound off by default
             muted : true
         }
@@ -41,8 +43,64 @@ BasePage {
             source : mediaPlayer
             anchors.fill : parent
         }
+        Image {
+            id : previewImage
+            source : previewImageUrl
+            anchors.fill : parent
+            visible : mediaPlayer.playbackState == MediaPlayer.StoppedState
+        }
+        MouseArea {
+            id : videoMouseArea
+            anchors.fill : parent
+            onClicked : {
+                if (mediaPlayer.playbackState == MediaPlayer.PlayingState) {
+                    mediaPlayer.pause()
+                } else {
+                    mediaPlayer.play()
+                }
+            }
+        }
+        PlayPauseButton {
+            // this is a "start" play button only visible when the media is stopped,
+            // which is generally when it was either not yet started or after it
+            // finished playing
+            anchors.horizontalCenter : parent.horizontalCenter
+            anchors.verticalCenter : parent.verticalCenter
+            visible : mediaPlayer.playbackState == MediaPlayer.StoppedState
+            onClicked : {
+                videoMouseArea.clicked(mouse)
+            }
+        }
+        PlayPauseButton {
+            // this is a "in progress" play/pause button
+            // which is visible when the video is being played
+            id : inProgressPlayPauseButton
+            height : 48 * rWin.c.style.m
+            width : 48 * rWin.c.style.m
+            anchors.left : videoOutput.left
+            anchors.leftMargin : 16 * rWin.c.style.m
+            anchors.bottom : videoOutput.bottom
+            anchors.bottomMargin : 16 * rWin.c.style.m
+            visible : mediaPlayer.playbackState != MediaPlayer.StoppedState
+            play : mediaPlayer.playbackState != MediaPlayer.PlayingState
+            onClicked : {
+                videoMouseArea.clicked(mouse)
+            }
+        }
+        Label {
+            id : durationLabel
+            anchors.right : muteRectangle.left
+            anchors.rightMargin : 16 * rWin.c.style.m
+            anchors.bottom : videoOutput.bottom
+            anchors.bottomMargin : 16 * rWin.c.style.m
+            property string positionString : "" + M.moment(mediaPlayer.position).format("mm:ss")
+            property string durationString : "" + M.moment(mediaPlayer.duration).format("mm:ss")
+            color : "white"
+            font.pixelSize : 32 * rWin.c.style.m
+            text : positionString + "/" + durationString
+        }
         ThemedBackgroundRectangle {
-            id: playRectangle
+            id: muteRectangle
             width : 48 * rWin.c.style.m
             height : 48 * rWin.c.style.m
             cornerRadius : width * 0.5 // lets make this into a circle

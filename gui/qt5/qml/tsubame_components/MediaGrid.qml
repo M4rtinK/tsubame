@@ -79,7 +79,8 @@ Grid {
                     // sorting by quality later
                     var videoUrl = modelData.video_info.variants[0].url
                     var mediaPage = rWin.loadPage("VideoPage", {
-                        "videoUrl" : videoUrl
+                        "videoUrl" : videoUrl,
+                        "previewImageUrl" : modelData.media_url_https + ":large"
                     })
                     rWin.log.debug("VIDEO URL")
                     rWin.log.debug(videoUrl)
