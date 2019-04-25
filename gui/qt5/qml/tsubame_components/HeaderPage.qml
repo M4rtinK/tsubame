@@ -11,6 +11,7 @@ import UC 1.0
 */
 
 Page {
+    id : headerPage
     property alias content : contentField.children
     property alias contentParent : contentField
     property alias headerContent : hContent.children
@@ -22,6 +23,22 @@ Page {
     property alias topLevelContent : topLevel.children
     property int headerHeight : rWin.headerHeight
     property alias isFlickable :  pageFlickable.interactive
+
+    // this property governs if the page should be destroyed
+    // once it leaves the stack
+    property bool destroyOnPop : true
+
+    onIsOnPageStackChanged : {
+        if (destroyOnPop && wasOnPageStack && !isOnPageStack) {
+            // Pop-on-destroy is enabled, the page already was
+            // on the stack before (and thus fully initialized
+            // and visible) and has just left the stack.
+            // This means the page can be safely garbage collected
+            // and we need to do that as apparently neither the
+            // QQC2 or Silica page stacks will not do it for us.
+            headerPage.destroy()
+        }
+    }
 
     Rectangle {
         id : background

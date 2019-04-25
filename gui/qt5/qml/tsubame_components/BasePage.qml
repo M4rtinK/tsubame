@@ -49,5 +49,9 @@ HeaderPage {
             }
         }
     }
+    /*
+    Component.onDestruction: {
+        rWin.log.debug("page destroyed " + headerText)
+    }*/
 
 }
