@@ -552,8 +552,7 @@ ApplicationWindow {
         if (pageInstance) {
             rWin.pushPage(pageInstance, null, rWin.animate)
         } else {
-            // page instance not valid, go back to map
-            rWin.pageStack.pop(rWin.mapPage, !animate)
+            rWin.log.error("pushPageInstance: page instance not valid")
         }
     }
 
