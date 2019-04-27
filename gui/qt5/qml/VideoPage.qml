@@ -48,6 +48,7 @@ BasePage {
             source : previewImageUrl
             anchors.fill : parent
             visible : mediaPlayer.playbackState == MediaPlayer.StoppedState
+            fillMode : Image.PreserveAspectFit
         }
         MouseArea {
             id : videoMouseArea
