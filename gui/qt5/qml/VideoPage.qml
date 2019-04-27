@@ -37,6 +37,15 @@ BasePage {
             autoPlay : false
             // sound off by default
             muted : true
+
+            onStatusChanged : {
+                if (status ==  MediaPlayer.EndOfMedia) {
+                    //rewind the video back to the beginning
+                    // so that the progress looks correct
+                    // with the preview image
+                    mediaPlayer.seek(0)
+                }
+            }
         }
         VideoOutput {
             id : videoOutput
