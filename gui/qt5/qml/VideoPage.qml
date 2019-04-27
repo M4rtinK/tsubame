@@ -94,11 +94,11 @@ BasePage {
             anchors.rightMargin : 16 * rWin.c.style.m
             anchors.bottom : videoOutput.bottom
             anchors.bottomMargin : 16 * rWin.c.style.m
-            property string positionString : "" + M.moment(mediaPlayer.position).format("mm:ss")
-            property string durationString : "" + M.moment(mediaPlayer.duration).format("mm:ss")
+            property string positionString : M.moment(mediaPlayer.position).format("mm:ss")
+            property string durationString : mediaPlayer.duration ? "/" + M.moment(mediaPlayer.duration).format("mm:ss") : ""
             color : "white"
             font.pixelSize : 32 * rWin.c.style.m
-            text : positionString + "/" + durationString
+            text : positionString + durationString
         }
         ThemedBackgroundRectangle {
             id: muteRectangle
