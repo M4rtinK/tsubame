@@ -76,18 +76,6 @@ ApplicationWindow {
         }
     }
 
-    property var pages : {
-        // pre-load the toplevel pages
-        "MapPage" : mapPage
-        /*
-        "Menu" : loadPage("MenuPage"),
-        "OptionsMenu" : loadPage("OptionsMenuPage"),
-        "InfoMenu" : loadPage("InfoMenuPage"),
-        "MapMenu" : loadPage("MapMenuPage"),
-        "ModeMenu" : loadPage("ModeMenuPage"),
-        */
-    }
-
     // theme
     property var theme
 
@@ -323,7 +311,7 @@ ApplicationWindow {
     }
 
     function __import_Tsubame() {
-        // import the Tsbame module asynchronously and trigger Tsubame
+        // import the Tsubame module asynchronously and trigger Tsubame
         // start once the module is loaded
 
         // import and initialize Tsubame,
@@ -481,72 +469,6 @@ ApplicationWindow {
         return loadQMLFile(pageName + ".qml", properties)
     }
 
-    /*
-    function loadPage(pageName) {
-        rWin.log.info("loading page: " + pageName)
-        var component = Qt.createComponent(pageName + ".qml");
-        if (component.status == Component.Ready) {
-            return component.createObject(rWin);
-        } else {
-            rWin.log.error("loading page failed: " + pageName + ".qml")
-            rWin.log.error("error: " + component.errorString())
-            return null
-        }
-    }
-    */
-
-    /* looks like object ids can't be stored in ListElements,
-     so we need this function to return corresponding menu pages
-     for names given by a string
-    */
-
-    function getPage(pageName) {
-        rWin.log.debug("main: getPage: " + pageName)
-        var newPage
-        if (pageName == null) { //signal that we should return to the map page
-            newPage = mapPage
-        } else { // load a page
-            var fullPageName = pageName + "Page"
-            newPage = rWin.pages[pageName]
-            if (newPage) {
-                rWin.log.debug("main: " + pageName + " found in page cache")
-            } else {
-                // page is not cached
-                // - load the page and cache it
-                newPage = loadPage(fullPageName)
-                if (newPage) { // loading successful
-                    rWin.pages[pageName] = newPage // cache the page
-                    rWin.log.debug("page cached: " + pageName)
-                } else { // loading failed, go to mapPage
-                    newPage = null
-                    rWin.log.debug(pageName + " loading failed, using mapPage")
-                }
-            }
-        }
-        rWin.log.debug("main: returning page: " + pageName)
-        return newPage
-
-    /* TODO: some pages are not so often visited pages so they could
-    be loaded dynamically from their QML files ?
-    -> also, a loader pool might be used as a rudimentary page cache,
-    but this might not be needed if the speed is found to be adequate */
-    }
-
-    function push(pageName) {
-        // push page by name
-        //
-        // TODO: instantiate pages that are not in the
-        // dictionary
-        if (pageName == null) { // null -> back to map
-            //TODO: check if the stack can over-fil
-            //rWin.log.debug("BACK TO MAP")
-            rWin.pageStack.pop(rWin.mapPage,!animate)
-        } else {
-            rWin.log.debug("PUSH " + pageName)
-            rWin.pushPageInstance(rWin.getPage(pageName))
-        }
-    }
-
     function pushPageInstance(pageInstance) {
         // push page instance to page stack
         if (pageInstance) {
@@ -562,7 +484,6 @@ ApplicationWindow {
         //      (keep the stream list page as the default page)
         rWin.pageStack.pop(undefined, !rWin.animate)
     }
-
 
     // Working with options
     function get(key, default_value, callback) {
