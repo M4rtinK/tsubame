@@ -133,18 +133,15 @@ BasePage {
 
     }
     function downloadVideo() {
-        rWin.log.debug("not implemented yet!")
-        /*
         rWin.log.info("starting video download")
-        var imageData = imageBrowser.mediaList[imageBrowser.imageIndex]
-        var url = imageData.media_url_https + ":large"
-        rWin.python.call("tsubame.gui.download.download_image", [url], function(download_success){
+        var url = videoPage.videoUrl
+        rWin.python.call("tsubame.gui.download.download_video", [url], function(download_success){
             if (download_success) {
-                rWin.notify(qsTr("Image downloaded."), 2000)
+                rWin.notify(qsTr("Video downloaded."), 2000)
             } else {
-                rWin.notify(qsTr("Image download failed."), 3000)
+                rWin.notify(qsTr("Video download failed."), 3000)
             }
-        })*/
+        })
     }
 }
 

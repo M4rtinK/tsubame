@@ -312,6 +312,22 @@ class Download(object):
             download_folder = os.path.join(download_folder, time.strftime("%Y_%m"))
         return download.download_file_(url=url, download_folder=download_folder, filename=filename)
 
+    def download_video(self,
+                       url,
+                       image_source=IMAGE_SOURCE_TWITTER,
+                       monthly_subfolders=True):
+        filename = url.split('/')[-1]
+        # TODO: use constant
+        if image_source == IMAGE_SOURCE_TWITTER:
+            # split the "?<stuff>" suffix that Twitter image URLs might have
+            filename = filename.rsplit("?", 1)[0]
+        download_folder = os.path.join(self.gui.tsubame.paths.pictures_folder_path,
+                                       "tsubame",
+                                       image_source)
+        if monthly_subfolders:
+            download_folder = os.path.join(download_folder, time.strftime("%Y_%m"))
+        return download.download_file_(url=url, download_folder=download_folder, filename=filename)
+
 
 class Streams(object):
     """An easy to use interface to message streams for the QML context."""
