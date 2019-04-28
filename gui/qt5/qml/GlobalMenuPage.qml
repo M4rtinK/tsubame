@@ -14,8 +14,8 @@ BasePage {
                 width : parent.cellWidth
                 text: qsTr("<b>Main stream list<b/>")
                 onClicked : {
-                    var streamList = rWin.loadPage("StreamListPage")
-                    streamList.backButtonVisible = true
+                    var streamList = rWin.loadPage("StreamListPage",
+                                                   {"backButtonVisible" : rWin.showBackButton})
                     rWin.pushPageInstance(streamList)
                 }
             }
