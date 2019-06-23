@@ -21,6 +21,16 @@ BasePage {
             }
             TextButton {
                 width : parent.cellWidth
+                text: qsTr("<b>Send Tweet<b/>")
+                onClicked : {
+                    var sendMessagePage = rWin.loadPage("SendMessagePage")
+                    rWin.pushPageInstance(sendMessagePage)
+                }
+            }
+
+
+            TextButton {
+                width : parent.cellWidth
                 text: qsTr("<b>Accounts<b/>")
                 onClicked : {
                     var accountsPage = rWin.loadPage("AccountsPage")
