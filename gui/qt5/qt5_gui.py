@@ -134,11 +134,17 @@ class Qt5GUI(GUI):
         # download handling
         self.download = Download(self)
 
+        # upload handling
+        self.upload = Upload(self)
+
         # account handling
         self.accounts = Accounts(self)
 
         # list handling
         self.lists = Lists(self)
+
+        # message handling
+        self.messages = Messages(self)
 
         # Japanese handling
         self.japanese = Japanese(self)
@@ -327,6 +333,27 @@ class Download(object):
         if monthly_subfolders:
             download_folder = os.path.join(download_folder, time.strftime("%Y_%m"))
         return download.download_file_(url=url, download_folder=download_folder, filename=filename)
+
+
+class Upload(object):
+    """An easy to use interface for file upload for the QML context."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def upload_media(self, account_username, media_file_path):
+        """Upload media, so that it can be attached to a Tweet.
+
+        :param account_username: account username for API access
+        :param media_file_path: path to media file to upload
+        :return: media id of the uploaded media file
+        :rtype: int
+        """
+        if not os.path.exists(media_file_path):
+            log.error("can't upload media - file does not exist: %s", media_file_path)
+            return None
+        api = self.gui.get_twitter_api(account_username)
+        return api.UploadMediaChunked(media_file_path)
 
 
 class Streams(object):
@@ -950,6 +977,32 @@ class Lists(object):
                                           list_owner_username=account_username,
                                           list_name=list_name,
                                           username=username)
+
+
+class Messages(object):
+    """Individual Twitter message handling."""
+
+    def __init__(self, gui):
+        self.gui = gui
+
+    def send_message(self, account_username, message_text, media_ids):
+        """Send a Twitter message.
+
+        :param account_username: account username for API access
+        :param message_text: text of the message to send
+        :param media_ids: a list of media ids
+        :type media_ids: a list of ints (or else python-twitter will not consider them media ids)
+        """
+        # make sure all media ids are integers
+        integer_media_ids = [int(media_id) for media_id in media_ids]
+        api = self.gui.get_twitter_api(account_username)
+        message = api.PostUpdate(status=message_text, media=integer_media_ids)
+        if message:
+            log.info("Tweet sent from account %s", account_username)
+            return True
+        else:
+            log.info("Failed to send Tweet from account %s", account_username)
+            return False
 
 
 class Search(object):
