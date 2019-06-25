@@ -44,8 +44,8 @@ BasePage {
 
     PlatformImagePicker {
         id : imagePicker
-        onSelectedContentChanged : {
-            imageChosen(selectedContent)
+        onSelectedFilesChanged : {
+            imageChosen(selectedFiles)
         }
     }
 
@@ -85,7 +85,6 @@ BasePage {
     }
 
     content : ContentColumn {
-
         ThemedTextRectangle {
             width : sendMessagePage.width - rWin.c.style.main.spacing * 2
             height : textArea.height
@@ -108,7 +107,9 @@ BasePage {
             id : characterCount
             text : sendMessagePage.characterCount + " " + qsTr("characters")
         }
-        SmartGrid {
+        Row {
+            spacing : rWin.c.style.main.spacing
+            visible : sendMessagePage.canAddImage || sendMessagePage.canAddVideo
             Button {
                 text : qsTr("Add image")
                 visible : sendMessagePage.canAddImage
@@ -121,16 +122,21 @@ BasePage {
                 visible : sendMessagePage.canAddVideo
             }
         }
-
         GridView {
-            property int columns : rWin.inPortrait ? 2 : 4
-            property int iconSize : rWin.c.style.button.icon.size
+            id : imagesGW
+            //property int columns : rWin.inPortrait ? 2 : 4
+            property int columns : 4
+            property real iconSize: parent.width / columns
+            cellWidth : iconSize
+            cellHeight : iconSize
             width : parent.width
-            height : rWin.inPortrait ? iconSize * 2 : iconSize
+            //height : rWin.inPortrait ? iconSize * 2 : iconSize
+            height : iconSize
             visible : imagesModel.count != 0
             model : imagesModel
             delegate : ImageButton {
                 id : imageButton1
+                iconSize : imagesGW.iconSize - rWin.c.style.main.spacing
                 text : mediaID ? qsTr("Remove") : qsTr("Uploading")
                 source : imageURL
                 onClicked : {
@@ -140,7 +146,8 @@ BasePage {
         }
         ImageButton {
             text : sendMessagePage.video ? qsTr("Video uploaded") : qsTr("Uploading")
-            visible : sendMessagePage.videoURL
+            //visible : sendMessagePage.videoURL
+            visible : false
         }
 
         Item {
@@ -150,7 +157,7 @@ BasePage {
                 id : accountCB
                 label : qsTr("Account")
                 anchors.leftMargin : rWin.c.style.main.spacing
-                width : parent.width / 3.0
+                width : parent.width / 2.0
                 onSelectedAccountUsernameChanged : {
                     sendMessagePage.messageAccountUsername = selectedAccountUsername
                 }
