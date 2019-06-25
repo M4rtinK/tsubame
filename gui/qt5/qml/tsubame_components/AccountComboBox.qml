@@ -10,6 +10,11 @@ ComboBox {
         // load account list from the backend
         rWin.log.info("AccountComboBox: fetching account list")
         rWin.python.call("tsubame.gui.accounts.get_account_list", [], function(accountList){
+            if (rWin.platform.sailfish) {
+                // Silica ComboBox on Sailfish OS always shows one element,
+                // so add a dummy "no account" element as the first one
+                accountsLM.append({"text" : qsTr("no account selected"), "username" : ""})
+            }
             for (var i=0; i<accountList.length; i++) {
                 accountsLM.append({"text" : accountList[i].name, "username" : accountList[i].username})
             }
