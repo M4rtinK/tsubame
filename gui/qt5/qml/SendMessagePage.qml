@@ -14,25 +14,76 @@ import "functions.js" as F
 BasePage {
     id : sendMessagePage
     headerText : qsTr("Send Tweet")
-    headerMenu : TopMenu {
-        MenuItem {
-            text: qsTr("Add media")
-            onClicked : {
-                rWin.log.info('media adding not yet implemented')
-            }
-        }
-    }
 
+    // message text & length
     property string messageText : ""
     property int characterCount : 0
     property string messageAccountUsername : ""
-    property bool mediaUploadInProgress : false
-    property int media1 : 0
-    property int media2 : 0
-    property int media3 : 0
-    property int media4 : 0
+    // is some media being uploaded ?
+    property int mediaUploadInProgress : 0
+    // Twitter media ids go there & need to be integers
+    ListModel {
+        id : imagesModel
+    }
+    property int maxImages : 4
+    property int maxVideos : 1
+
+    property int video : 0
+    property string videoURL : ""
+    // once we add an image we can't add a video and vice versa
+    property bool canAddImage : messageAccountUsername &&
+                                !mediaUploadInProgress &&
+                                videoURL == "" &&
+                                imagesModel.count < 4
+    property bool canAddVideo : messageAccountUsername &&
+                                !mediaUploadInProgress &&
+                                imagesModel.count == 0
+
     property bool readyToSend : messageText && messageAccountUsername && !mediaUploadInProgress
     property bool sending : false
+
+    PlatformImagePicker {
+        id : imagePicker
+        onSelectedContentChanged : {
+            imageChosen(selectedContent)
+        }
+    }
+
+    function chooseImage() {
+        // choose an image
+        imagePicker.run()
+    }
+
+    function imageChosen(imageURLs) {
+        // add the images to our model,
+        // while making sure they fit
+        var slots = maxImages - imagesModel.count
+        var iterations = Math.min(slots, imageURLs.length)
+        for (var i=0; i<iterations; i++) {
+            var imageURL = imageURLs[i]
+            imagesModel.append({"imageURL" : imageURL, "mediaID" : ""})
+            mediaUploadInProgress++
+            uploadImage(imageURL, imagesModel.count-1, function(results){
+                mediaUploadInProgress--
+                var jobIndex = results[0]
+                var mediaID = results[1]
+                imagesModel.setProperty(jobIndex, "mediaID", mediaID)
+            })
+        }
+    }
+
+    function uploadImage(imageURL, jobIndex, callback) {
+        rWin.python.call("tsubame.gui.upload.upload_media", [messageAccountUsername, imageURL, jobIndex], callback)
+    }
+
+    function chooseVideo() {
+        // choose a video
+    }
+
+    function uploadVideo(videoURL) {
+
+    }
+
     content : ContentColumn {
 
         ThemedTextRectangle {
@@ -57,18 +108,47 @@ BasePage {
             id : characterCount
             text : sendMessagePage.characterCount + " " + qsTr("characters")
         }
+        SmartGrid {
+            Button {
+                text : qsTr("Add image")
+                visible : sendMessagePage.canAddImage
+                onClicked : {
+                    chooseImage()
+                }
+            }
+            Button {
+                text : qsTr("Add video")
+                visible : sendMessagePage.canAddVideo
+            }
+        }
+
+        GridView {
+            property int columns : rWin.inPortrait ? 2 : 4
+            property int iconSize : rWin.c.style.button.icon.size
+            width : parent.width
+            height : rWin.inPortrait ? iconSize * 2 : iconSize
+            visible : imagesModel.count != 0
+            model : imagesModel
+            delegate : ImageButton {
+                id : imageButton1
+                text : mediaID ? qsTr("Remove") : qsTr("Uploading")
+                source : imageURL
+                onClicked : {
+                    imagesModel.remove(index)
+                }
+            }
+        }
+        ImageButton {
+            text : sendMessagePage.video ? qsTr("Video uploaded") : qsTr("Uploading")
+            visible : sendMessagePage.videoURL
+        }
+
         Item {
             height : sendTweetButton.height
             width : parent.width
-            Label {
-                id : accountLabel
-                anchors.left : parent.left
-                anchors.leftMargin : rWin.c.style.main.spacing
-                text : qsTr("Account")
-            }
             AccountComboBox {
                 id : accountCB
-                anchors.left : accountLabel.right
+                label : qsTr("Account")
                 anchors.leftMargin : rWin.c.style.main.spacing
                 width : parent.width / 3.0
                 onSelectedAccountUsernameChanged : {
@@ -78,7 +158,6 @@ BasePage {
             Button {
                 anchors.right : parent.right
                 anchors.rightMargin : rWin.c.style.main.spacing
-                anchors.verticalCenter : accountLabel.verticalCenter
                 id : sendTweetButton
                 width : parent.width / 3.0
                 text : sendMessagePage.sending ? qsTr("Sending...") : qsTr("Send Tweet")
@@ -91,10 +170,18 @@ BasePage {
                     } else {
                         sendMessagePage.sending = true
                     }
+                    // gather all media ids
+                    var mediaIDs = []
+                    for (var i=0; i<imagesModel.count; i++) {
+                        var mediaID = imagesModel.get(i).mediaID
+                        if (mediaID) {
+                            mediaIDs.push(imagesModel.get(i).mediaID)
+                        }
+                    }
                     rWin.python.call("tsubame.gui.messages.send_message",
                     [sendMessagePage.messageAccountUsername,
                      sendMessagePage.messageText,
-                     []], function(success){
+                     mediaIDs], function(success){
                         // show success/error notification
                         if (success) {
                             rWin.notify(qsTr("Tweet sent"))
