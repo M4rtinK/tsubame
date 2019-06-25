@@ -44,6 +44,7 @@ BasePage {
 
     PlatformImagePicker {
         id : imagePicker
+        selectMultiple : true
         onSelectedFilesChanged : {
             imageChosen(selectedFiles)
         }
