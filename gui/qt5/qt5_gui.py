@@ -341,20 +341,40 @@ class Upload(object):
     def __init__(self, gui):
         self.gui = gui
 
-    def upload_media(self, account_username, media_file_path):
+    def upload_media(self, account_username, media_file_path, index):
         """Upload media, so that it can be attached to a Tweet.
 
-        :param account_username: account username for API access
-        :param media_file_path: path to media file to upload
+        :param str account_username: account username for API access
+        :param str media_file_path: path to media file to upload
+        :param int index: job index for asynchronous processing
         :return: media id of the uploaded media file
         :rtype: int
         """
-        if not os.path.exists(media_file_path):
-            log.error("can't upload media - file does not exist: %s", media_file_path)
-            return None
-        api = self.gui.get_twitter_api(account_username)
-        return api.UploadMediaChunked(media_file_path)
+        try:
+            # drop the file:// prefix
+            media_file_path = media_file_path.split("file://")[1]
+            # check if the file seems to exist
+            if not os.path.exists(media_file_path):
+                log.error("can't upload media - file does not exist: %s", media_file_path)
+                return index, ""
+            api = self.gui.get_twitter_api(account_username)
+            log.debug("uploading %s via account %s and job id %s",
+                      media_file_path, account_username, index)
 
+            media_id = api.UploadMediaChunked(media_file_path)
+            log.debug("upload done of %s/%s/%s done, media id: %s",
+                      media_file_path,
+                      account_username,
+                      index,
+                      media_id)
+            # We need to send the integer media id as a string to QML as
+            # otherwise it will get mangled somewhere on the way.
+            # We will just convert it back to integer before sending it
+            # to the Twitter API.
+            return index, "%s" % media_id
+        except:
+            log.exception("media upload failed for account:file %s:%s", account_username, media_file_path)
+            return index, ""
 
 class Streams(object):
     """An easy to use interface to message streams for the QML context."""
