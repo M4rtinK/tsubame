@@ -351,8 +351,11 @@ class Upload(object):
         :rtype: int
         """
         try:
-            # drop the file:// prefix
-            media_file_path = media_file_path.split("file://")[1]
+            # Drop the file:// prefix, that might sometimes
+            # show up from the QML pickers, depending on platform
+            # and component set.
+            if media_file_path.startswith("file://"):
+                media_file_path = media_file_path.split("file://")[1]
             # check if the file seems to exist
             if not os.path.exists(media_file_path):
                 log.error("can't upload media - file does not exist: %s", media_file_path)
