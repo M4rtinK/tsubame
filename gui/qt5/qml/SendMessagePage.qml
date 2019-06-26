@@ -28,7 +28,7 @@ BasePage {
     property int maxImages : 4
     property int maxVideos : 1
 
-    property int video : 0
+    property string videoMediaID : ""
     property string videoURL : ""
     // once we add an image we can't add a video and vice versa
     property bool canAddImage : messageAccountUsername &&
@@ -37,7 +37,8 @@ BasePage {
                                 imagesModel.count < 4
     property bool canAddVideo : messageAccountUsername &&
                                 !mediaUploadInProgress &&
-                                imagesModel.count == 0
+                                imagesModel.count == 0 &&
+                                !videoURL
 
     property bool readyToSend : messageText && messageAccountUsername && !mediaUploadInProgress
     property bool sending : false
@@ -47,6 +48,14 @@ BasePage {
         selectMultiple : true
         onSelectedFilesChanged : {
             imageChosen(selectedFiles)
+        }
+    }
+
+    PlatformVideoPicker {
+        id : videoPicker
+        selectMultiple : false
+        onSelectedFilesChanged : {
+            videoChosen(selectedFiles)
         }
     }
 
@@ -64,7 +73,7 @@ BasePage {
             var imageURL = imageURLs[i]
             imagesModel.append({"imageURL" : imageURL, "mediaID" : ""})
             mediaUploadInProgress++
-            uploadImage(imageURL, imagesModel.count-1, function(results){
+            uploadMedia(imageURL, imagesModel.count-1, function(results){
                 mediaUploadInProgress--
                 var jobIndex = results[0]
                 var mediaID = results[1]
@@ -73,16 +82,24 @@ BasePage {
         }
     }
 
-    function uploadImage(imageURL, jobIndex, callback) {
-        rWin.python.call("tsubame.gui.upload.upload_media", [messageAccountUsername, imageURL, jobIndex], callback)
-    }
-
     function chooseVideo() {
         // choose a video
+        videoPicker.run()
     }
 
-    function uploadVideo(videoURL) {
+    function videoChosen(videoURLs) {
+        videoURL = videoURLs[0]
+        mediaUploadInProgress++
+        uploadMedia(videoURLs[0], -1, function(results){
+            mediaUploadInProgress--
+            var mediaID = results[1]
+            videoMediaID = mediaID
+        })
+    }
 
+    function uploadMedia(imageURL, jobIndex, callback) {
+        // upload one media item and return resulting media id
+        rWin.python.call("tsubame.gui.upload.upload_media", [messageAccountUsername, imageURL, jobIndex], callback)
     }
 
     content : ContentColumn {
@@ -112,7 +129,7 @@ BasePage {
             spacing : rWin.c.style.main.spacing
             visible : sendMessagePage.canAddImage || sendMessagePage.canAddVideo
             Button {
-                text : qsTr("Add image")
+                text : qsTr("Add images")
                 visible : sendMessagePage.canAddImage
                 onClicked : {
                     chooseImage()
@@ -121,6 +138,9 @@ BasePage {
             Button {
                 text : qsTr("Add video")
                 visible : sendMessagePage.canAddVideo
+                onClicked : {
+                    chooseVideo()
+                }
             }
         }
         GridView {
@@ -145,10 +165,21 @@ BasePage {
                 }
             }
         }
-        ImageButton {
-            text : sendMessagePage.video ? qsTr("Video uploaded") : qsTr("Uploading")
-            //visible : sendMessagePage.videoURL
-            visible : false
+        VideoButton {
+            anchors.horizontalCenter : parent.horizontalCenter
+            text : sendMessagePage.videoMediaID ? qsTr("Video uploaded") : qsTr("Uploading")
+            visible : sendMessagePage.videoURL
+            iconSize: parent.width / 4
+            source : videoURL
+            loops : 20
+            onSourceChanged : {
+                rWin.log.debug("SOURCE CHANGED")
+                rWin.log.debug(source)
+            }
+            onClicked : {
+                sendMessagePage.videoMediaID = ""
+                sendMessagePage.videoURL = ""
+            }
         }
 
         Item {
@@ -180,11 +211,15 @@ BasePage {
                     }
                     // gather all media ids
                     var mediaIDs = []
-                    for (var i=0; i<imagesModel.count; i++) {
-                        var mediaID = imagesModel.get(i).mediaID
-                        if (mediaID) {
-                            mediaIDs.push(imagesModel.get(i).mediaID)
+                    if (imagesModel.count) {
+                        for (var i=0; i<imagesModel.count; i++) {
+                            var mediaID = imagesModel.get(i).mediaID
+                            if (mediaID) {
+                                mediaIDs.push(imagesModel.get(i).mediaID)
+                            }
                         }
+                    } else if (videoMediaID) {
+                        mediaIDs.push(videoMediaID)
                     }
                     rWin.python.call("tsubame.gui.messages.send_message",
                     [sendMessagePage.messageAccountUsername,
