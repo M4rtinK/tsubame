@@ -28,6 +28,9 @@ import twitter
 import re
 import tempfile
 import time
+import queue
+
+from requests_oauthlib import OAuth1
 
 from core import constants
 from core.threads import threadMgr
@@ -41,6 +44,8 @@ from core import account as account_module
 from core import list as list_module
 from core import db as db_module
 from core import cache as cache_module
+from core import twitter_async_upload
+from core import threads
 from core.signal import Signal
 from gui.gui_base import GUI
 from gui.qt5.lib import process_twitter_message_text, process_twitter_message
@@ -172,6 +177,15 @@ class Qt5GUI(GUI):
         if api is None:
             raise TwitterAPIUsernameNotFound(account_username)
         return api
+
+    def get_twitter_tokens(self, account_username):
+        """Get API tokens corresponding to the account username.
+
+        :param str account_username: account username for the API
+        :returns: Twitter api tokens corresponding to the account username
+        :raises: TwitterAPIUsernameNotFound
+        """
+        return api_module.api_manager.get_twitter_tokens(account_username=account_username)
 
     @property
     def general_purpose_twitter_api_username(self):
@@ -335,17 +349,111 @@ class Download(object):
         return download.download_file_(url=url, download_folder=download_folder, filename=filename)
 
 
+class UploadProgress(object):
+    """Upload progress reporting class that sends progress updates to QML.
+
+    Each signal contains a progress (float going 0->1) and a job index,
+    so that the upload progress can be matched to an element.
+
+    This is a callable class so that we can set job index at
+    instantiation & then the instance gets called.
+    """
+
+    def __init__(self, index):
+        self._index = index
+
+    def __call__(self, progress, finalizing=False):
+        if finalizing:
+            pyotherside.send("mediaUploadStatus", (self._index, "FINALIZING"))
+        else:
+            pyotherside.send("mediaUploadStatus", (self._index, "PROGRESS", progress))
+
 class Upload(object):
     """An easy to use interface for file upload for the QML context."""
 
     def __init__(self, gui):
         self.gui = gui
 
-    def upload_media(self, account_username, media_file_path, index):
+        self._task_queue = queue.Queue()
+
+        t = threads.TsubameThread(name=constants.THREAD_MEDIA_UPLOAD,
+                                  target=self._handle_uploads)
+        threads.threadMgr.add(t)
+
+
+    def _handle_uploads(self):
+        """Handle media upload tasks."""
+        log.debug("media upload worker starting")
+        while True:
+            index, task = self._task_queue.get()
+            if task is None:
+                log.debug("media upload worker shutting down")
+                break
+            try:
+                log.debug("uploading %s:%s", index, task.media_filename)
+                pyotherside.send("mediaUploadStatus", (index, "UPLOADING"))
+                success, message = task.run()
+                if success:
+                    media_id = task.media_id
+                    log.debug("media upload done %s:%s:%s", index, task.media_filename, media_id)
+                    pyotherside.send("mediaUploadStatus", (index, "SUCCESS", str(media_id)))
+                else:
+                    pyotherside.send("mediaUploadStatus", (index, "ERROR", message))
+            except:
+                log.exception("media upload failed for %s:%s", index, task.media_filename)
+                pyotherside.send("mediaUploadStatus", (index, "ERROR", ""))
+
+            self._task_queue.task_done()
+
+    def upload_media_async(self, account_username, media_file_path, media_category, index):
         """Upload media, so that it can be attached to a Tweet.
+
+        Custom asynchronous version based on code recommended by Twitter for robust
+        media upload.
 
         :param str account_username: account username for API access
         :param str media_file_path: path to media file to upload
+        :param str media_category: Twitter media category
+        :param int index: job index for asynchronous processing
+        :return: media id of the uploaded media file
+        :rtype: int
+        """
+        log.debug("starting media upload for %s:%s", account_username, media_file_path)
+        # TODO: report relevant errors back to QML
+        # Drop the file:// prefix, that might sometimes
+        # show up from the QML pickers, depending on platform
+        # and component set.
+        if media_file_path.startswith("file://"):
+            media_file_path = media_file_path.split("file://")[1]
+        # we need to gather appropriate tokens for the
+        tokens = self.gui.get_twitter_tokens(account_username)
+        consumer_key, consumer_secret, token_key, token_secret = tokens
+        # crete an oauth session
+        # TODO: caching ?
+        oauth = twitter_async_upload.get_oauth(
+            consumer_key,
+            consumer_secret,
+            token_key,
+            token_secret
+        )
+        # initialize the media upload object
+        upload = twitter_async_upload.MediaUpload(
+            file_name = media_file_path,
+            oauth = oauth,
+            media_category = media_category,
+            progress_callback = UploadProgress(index)
+        )
+        # forward to upload thread
+        self._task_queue.put_nowait((index, upload))
+
+    def upload_media_basic(self, account_username, media_file_path, media_category, index):
+        """Upload media, so that it can be attached to a Tweet.
+
+        Version provided by the python-twitter library.
+
+        :param str account_username: account username for API access
+        :param str media_file_path: path to media file to upload
+        :param str media_category: Twitter media category
         :param int index: job index for asynchronous processing
         :return: media id of the uploaded media file
         :rtype: int
@@ -364,7 +472,7 @@ class Upload(object):
             log.debug("uploading %s via account %s and job id %s",
                       media_file_path, account_username, index)
 
-            media_id = api.UploadMediaChunked(media_file_path)
+            media_id = api.UploadMediaChunked(media_file_path, media_category=media_category)
             log.debug("upload done of %s/%s/%s done, media id: %s",
                       media_file_path,
                       account_username,

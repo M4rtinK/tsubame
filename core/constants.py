@@ -24,3 +24,8 @@ class InternetConnectivityStatus(Enum):
 
 class MessageType(Enum):
     TWEET = "tweet"
+
+
+# threads
+
+THREAD_MEDIA_UPLOAD = "tsubameMediaUpload"

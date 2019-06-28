@@ -20,47 +20,71 @@ BasePage {
     property int characterCount : 0
     property string messageAccountUsername : ""
     // is some media being uploaded ?
-    property int mediaUploadInProgress : 0
     // Twitter media ids go there & need to be integers
     ListModel {
         id : imagesModel
     }
+
+    property int _job_id : 0
+    function getJobId() {
+        _job_id++
+        return _job_id
+    }
+
     property int maxImages : 4
     property int maxVideos : 1
 
     property string videoMediaID : ""
     property string videoURL : ""
+    property int videoJobId : -1
+    property string videoStatusText : ""
     // once we add an image we can't add a video and vice versa
     property bool canAddImage : messageAccountUsername &&
-                                !mediaUploadInProgress &&
                                 videoURL == "" &&
                                 imagesModel.count < 4
     property bool canAddVideo : messageAccountUsername &&
-                                !mediaUploadInProgress &&
                                 imagesModel.count == 0 &&
                                 !videoURL
 
-    property bool readyToSend : messageText && messageAccountUsername && !mediaUploadInProgress
+    property bool readyToSend : messageText && messageAccountUsername
     property bool sending : false
 
     PlatformImagePicker {
         id : imagePicker
         selectMultiple : true
+        property bool armed: false
         onSelectedFilesChanged : {
-            imageChosen(selectedFiles)
+            // looks like we sometimes get some false alerts here,
+            // so add arming & check for results length
+            if (!armed) {
+                return
+            }
+            if (selectedFiles.length) {
+                imageChosen(selectedFiles)
+            }
         }
     }
 
     PlatformVideoPicker {
         id : videoPicker
         selectMultiple : false
+        property bool armed: false
         onSelectedFilesChanged : {
-            videoChosen(selectedFiles)
+            // looks like we sometimes get some false alerts here,
+            // so add arming & check for results length
+            if (!armed) {
+                return
+            }
+            if (selectedFiles.length) {
+                videoChosen(selectedFiles)
+            }
         }
     }
 
     function chooseImage() {
         // choose an image
+        videoPicker.armed = false
+        imagePicker.armed = true
         imagePicker.run()
     }
 
@@ -71,35 +95,79 @@ BasePage {
         var iterations = Math.min(slots, imageURLs.length)
         for (var i=0; i<iterations; i++) {
             var imageURL = imageURLs[i]
-            imagesModel.append({"imageURL" : imageURL, "mediaID" : ""})
-            mediaUploadInProgress++
-            uploadMedia(imageURL, imagesModel.count-1, function(results){
-                mediaUploadInProgress--
-                var jobIndex = results[0]
-                var mediaID = results[1]
-                imagesModel.setProperty(jobIndex, "mediaID", mediaID)
-            })
+            var jobId = getJobId()
+            imagesModel.append({"imageURL" : imageURL, "mediaID" : "", "jobId" : jobId, "statusText" : qsTr("Waiting")})
+            uploadMedia(imageURL, "TWEET_IMAGE", jobId)
         }
     }
 
     function chooseVideo() {
         // choose a video
+        imagePicker.armed = false
+        videoPicker.armed = true
         videoPicker.run()
     }
 
     function videoChosen(videoURLs) {
-        videoURL = videoURLs[0]
-        mediaUploadInProgress++
-        uploadMedia(videoURLs[0], -1, function(results){
-            mediaUploadInProgress--
-            var mediaID = results[1]
-            videoMediaID = mediaID
-        })
+        var URL = videoURLs[0]
+        var jobId = getJobId()
+        videoURL = URL
+        videoStatusText = qsTr("Uploading...")
+        videoJobId = jobId
+        uploadMedia(URL, "TWEET_VIDEO", jobId)
     }
 
-    function uploadMedia(imageURL, jobIndex, callback) {
+    function uploadMedia(imageURL, mediaCategory, jobIndex) {
         // upload one media item and return resulting media id
-        rWin.python.call("tsubame.gui.upload.upload_media", [messageAccountUsername, imageURL, jobIndex], callback)
+        rWin.python.call("tsubame.gui.upload.upload_media_async",
+                         [messageAccountUsername, imageURL, mediaCategory, jobIndex])
+    }
+
+    Component.onCompleted : {
+        // connect to upload status handler
+        rWin.python.setHandler("mediaUploadStatus", function(uploadStatus) {
+            // first match the job to a known image or video upload
+            var jobId = uploadStatus[0]
+            var messageType = uploadStatus[1]
+            // check video first
+            if (jobId == videoJobId) {
+                // handle video
+                if (messageType == "SUCCESS") {
+                    videoMediaID = uploadStatus[2]
+                } else if (messageType == "PROGRESS") {
+                    videoStatusText = Math.round(uploadStatus[2] * 100) + " %"
+                } else if (messageType == "FINALIZING") {
+                    videoStatusText = qsTr("Finalizing")
+                } else if (messageType == "ERROR") {
+                    videoStatusText = qsTr("Upload failed")
+                    if (uploadStatus[2]) {
+                            rWin.notify(qsTr("Upload failed:") + " " + uploadStatus[2])
+                    }
+                }
+            } else {
+                // we need to check the image list view
+                for (var i=0; i<imagesModel.count; i++) {
+                    if (jobId == imagesModel.get(i).jobId) {
+                        if (messageType == "SUCCESS") {
+                            imagesModel.setProperty(i, "mediaID", uploadStatus[2])
+                        } else if (messageType == "UPLOADING") {
+                           imagesModel.setProperty(i, "statusText", qsTr("Uploading..."))
+                        } else if (messageType == "PROGRESS") {
+                            imagesModel.setProperty(i, "statusText", Math.round(uploadStatus[2] * 100) + " %")
+                        } else if (messageType == "FINALIZING") {
+                           imagesModel.setProperty(i, "statusText", qsTr("Finalizing"))
+                        } else if (messageType == "ERROR") {
+                            imagesModel.setProperty(i, "statusText", qsTr("Upload failed"))
+                            if (uploadStatus[2]) {
+                                    rWin.notify(qsTr("Upload failed:") + " " + uploadStatus[2])
+                            }
+                        }
+                        break
+                    }
+                }
+
+            }
+        })
     }
 
     content : ContentColumn {
@@ -158,7 +226,7 @@ BasePage {
             delegate : ImageButton {
                 id : imageButton1
                 iconSize : imagesGW.iconSize - rWin.c.style.main.spacing
-                text : mediaID ? qsTr("Remove") : qsTr("Uploading")
+                text : mediaID ? qsTr("Remove") : statusText
                 source : imageURL
                 onClicked : {
                     imagesModel.remove(index)
@@ -166,18 +234,17 @@ BasePage {
             }
         }
         VideoButton {
+            id : videoButton
             anchors.horizontalCenter : parent.horizontalCenter
-            text : sendMessagePage.videoMediaID ? qsTr("Video uploaded") : qsTr("Uploading")
+            text : videoMediaID ? qsTr("Remove") : sendMessagePage.videoStatusText
             visible : sendMessagePage.videoURL
             iconSize: parent.width / 4
             source : videoURL
+            property real uploadProgress : 0
             loops : 20
-            onSourceChanged : {
-                rWin.log.debug("SOURCE CHANGED")
-                rWin.log.debug(source)
-            }
             onClicked : {
                 sendMessagePage.videoMediaID = ""
+                sendMessagePage.videoJobId = ""
                 sendMessagePage.videoURL = ""
             }
         }
