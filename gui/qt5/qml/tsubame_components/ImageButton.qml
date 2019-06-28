@@ -1,7 +1,7 @@
 //ImageButton.qml
 // A simple button with an image in the middle.
 
-import QtQuick 2.0
+import QtQuick 2.5
 import UC 1.0
 
 Rectangle {
@@ -55,6 +55,9 @@ Rectangle {
         fillMode : Image.PreserveAspectFit
         smooth : true
         asynchronous : true
+        // EXIF rangers, transform! ^_^
+        // (respect rotation from EXIF)
+        autoTransform : true
     }
 
     Label {
