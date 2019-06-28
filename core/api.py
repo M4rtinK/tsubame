@@ -150,6 +150,23 @@ class ApiManager(TsubameBase):
     def twitter_consumer_secret(self):
         return self._twitter_consumer_secret
 
+    def get_twitter_tokens(self, account_username):
+        """Get Twitter API access tokens corresponding to the provided username.
+
+        :param str account_username: unique Twitter username of an account that has been added to Tsubame
+        """
+        twitter_account = self._account_manager.twitter_accounts.get(account_username)
+        if twitter_account is None:
+            raise TwitterAccountForAPINotFound(account_username)
+
+        consumer_key = self._twitter_consumer_key
+        consumer_secret = self._twitter_consumer_secret
+        token_key = twitter_account.token
+        token_secret = twitter_account.token_secret
+
+        return consumer_key, consumer_secret, token_key, token_secret
+
+
     def get_twitter_api(self, account_username):
         """Get Twitter API access object corresponding to the provided username.
         
