@@ -27,8 +27,14 @@ BasePage {
                     rWin.pushPageInstance(sendMessagePage)
                 }
             }
-
-
+            TextButton {
+                width : parent.cellWidth
+                text: qsTr("<b>Search<b/>")
+                onClicked : {
+                    var searchPage = rWin.loadPage("SearchPage")
+                    rWin.pushPageInstance(searchPage)
+                }
+            }
             TextButton {
                 width : parent.cellWidth
                 text: qsTr("<b>Accounts<b/>")

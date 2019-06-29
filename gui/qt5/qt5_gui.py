@@ -685,6 +685,32 @@ class Streams(object):
         list_stream.refresh()
         return self._store_temporary_stream(list_stream)
 
+    def get_search_stream(self, search_term):
+        """ Return a temporary search stream id.
+
+        The id can be used to retrieve stream messages and to
+        remove the stream once it is no longer needed.
+
+        :param str search_term: a Twitter search term
+        :return: id of a temporary user favorites stream
+        """
+
+        # create temporary stream
+        search_stream = stream_module.MessageStream.new(
+            db = self._temp_db,
+            name = "@%s search" % search_term
+        )
+        # create temporary source
+        search_stream_source = stream_module.TwitterSearchTweets.new(
+            db = self._temp_db,
+            api_username = self.gui.general_purpose_twitter_api_username,
+            search_term = search_term
+        )
+        search_stream_source.cache_messages = False
+        search_stream.inputs.add(search_stream_source)
+        search_stream.refresh()
+        return self._store_temporary_stream(search_stream)
+
     def _store_temporary_stream(self, stream):
         temporary_stream_id = self.get_temporary_stream_id()
         self._temporary_streams[temporary_stream_id] = stream

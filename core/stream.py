@@ -45,6 +45,7 @@ class SourceTypes(Enum):
     TWITTER_REMOTE_LIST = "source-twitter-remote-list"
     TWITTER_LOCAL_LIST = "source-twitter-local-list"
     TWITTER_HASHTAG = "source-twitter-hashtag"
+    TWITTER_SEARCH_TERM = "source-twitter-search-term"
 
 
 class MessageStreamNameAlreadyExists(Exception):
@@ -393,6 +394,35 @@ class TwitterHashtagTweets(TwitterMessageSource):
         return self.api.GetSearch(term=term,
                                   since_id=self.latest_message_id,
                                   count=200)
+
+
+class TwitterSearchTweetsData(blitzdb.Document):
+    pass
+
+
+class TwitterSearchTweets(TwitterMessageSource):
+    """Tweets corresponding to a search term."""
+    source_type = SourceTypes.TWITTER_SEARCH_TERM
+
+    data_defaults = copy.deepcopy(TwitterMessageSource.data_defaults)
+    data_defaults.update({"search_term": None})
+
+    @classmethod
+    def new(cls, db, api_username, search_term):
+        data = TwitterSearchTweetsData(copy.deepcopy(cls.data_defaults))
+        data.search_term = search_term
+        data.api_username = api_username
+        return cls(db, data)
+
+    @property
+    def search_term(self):
+        return self.data.search_term
+
+    def _do_refresh(self):
+        return self.api.GetSearch(term=self.search_term,
+                                  since_id=self.latest_message_id,
+                                  count=200)
+
 
 class MessageStreamData(blitzdb.Document):
     pass
