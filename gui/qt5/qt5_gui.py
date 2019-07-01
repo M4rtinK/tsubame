@@ -803,6 +803,62 @@ class Users(object):
             "public_list_count" : len(public_lists)
         }
 
+    def check_account_follows_user(self, account_username, username):
+        """Check if an account follows a user.
+
+        :param str account_username: account username for API access
+        :param str username: username to check
+        :return: True if it follows the user, False if not
+        """
+        log.debug("checking follow status %s:%s", account_username, username)
+        api = self.gui.get_twitter_api(account_username)
+        user_info = user_module.get_user_info(api, username)
+        return user_info.following
+
+    def follow_user(self, account_username, username):
+        """Follow a user.
+
+        :param str account_username: account username for API access
+        :param str username: username of the user to follow
+        :return: true on success, false on failure
+        """
+        message = ""
+        api = self.gui.get_twitter_api(account_username)
+        try:
+            api.CreateFriendship(screen_name=username)
+            success = True
+        except twitter.TwitterError as e:
+            success = False
+            message = e.message[0].get("message", "")
+        except:
+            log.exception("follow attempt failed %s tried to follow %s",
+                          account_username,
+                          username)
+            success = False
+        return success, message
+
+    def unfollow_user(self, account_username, username):
+        """Unfollow a user.
+
+        :param str account_username: account username for API access
+        :param str username: username of the user to unfollow
+        :return: true on success, false on failure
+        """
+        message = ""
+        api = self.gui.get_twitter_api(account_username)
+        try:
+            api.DestroyFriendship(screen_name=username)
+            success = True
+        except twitter.TwitterError as e:
+            success = False
+            message = e.message[0].get("message", "")
+        except:
+            log.exception("unfollow attempt failed %s tried to unfollow %s",
+                          account_username,
+                          username)
+            success = False
+        return success, message
+
 class Accounts(object):
     """Twitter account handling."""
 

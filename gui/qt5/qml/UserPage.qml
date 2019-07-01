@@ -182,6 +182,92 @@ BasePage {
                 rWin.pushPageInstance(userFavoritesPage)
             }
         }
+        ThemedBackgroundRectangle {
+            id : interactionTR
+            width : parent.width
+            height : interactLabel.height + activeItem.height + rWin.c.style.main.spacing * 3
+            visible : userPage.dataValid
+            property bool followStateKnown : false
+            property bool accountFollowsUser : false
+            property bool operationInProgress : false
+            property string accountUsername : ""
+            onAccountUsernameChanged : {
+                if (accountUsername) {
+                    interactionTR.followStateKnown = false
+                    rWin.python.call("tsubame.gui.users.check_account_follows_user",
+                        [accountUsername, user.screen_name],
+                        function(result) {
+                            interactionTR.followStateKnown = true
+                            interactionTR.accountFollowsUser = result
+                    })
+                }
+            }
+            Label {
+                id : interactLabel
+                anchors.top : interactionTR.top
+                anchors.topMargin : rWin.c.style.main.spacing
+                anchors.horizontalCenter : parent.horizontalCenter
+                text : "<b>" + qsTr("Interact") + "</b>"
+            }
+            Item {
+                id : activeItem
+                anchors.top : interactLabel.bottom
+                height : accountCB.height
+                width : parent.width
+                AccountComboBox {
+                    id : accountCB
+                    label : qsTr("Account")
+                    anchors.top : parent.top
+                    anchors.topMargin : rWin.c.style.main.spacing
+                    anchors.left : parent.left
+                    anchors.leftMargin : rWin.c.style.main.spacing
+                    width : parent.width / 2.0
+                    onSelectedAccountUsernameChanged : {
+                        interactionTR.accountUsername = selectedAccountUsername
+                    }
+                }
+                Button {
+                    id : followButton
+                    visible : interactionTR.accountUsername && interactionTR.followStateKnown
+                    text : interactionTR.accountFollowsUser ? qsTr("Unfollow") : qsTr("Follow")
+                    width : parent.width / 3.0
+                    anchors.top : parent.top
+                    anchors.topMargin : rWin.c.style.main.spacing * 2
+                    anchors.right : parent.right
+                    anchors.rightMargin : rWin.c.style.main.spacing
+                    onClicked : {
+                        if (!interactionTR.operationInProgress) {
+                            interactionTR.operationInProgress = true
+                            if (interactionTR.accountFollowsUser) {
+                                rWin.python.call("tsubame.gui.users.unfollow_user",
+                                                 [interactionTR.accountUsername, user.screen_name],
+                                                 function(result){
+                                    interactionTR.operationInProgress = false
+                                    if (result[0]) {
+                                        interactionTR.accountFollowsUser = false
+                                    } else if (result[1]) {
+                                        var message = qsTr("Can't unfollow") + ": " + result[1]
+                                        rWin.notify(message)
+                                    }
+                                })
+                            } else {
+                                rWin.python.call("tsubame.gui.users.follow_user",
+                                                 [interactionTR.accountUsername, user.screen_name],
+                                                 function(result){
+                                    interactionTR.operationInProgress = false
+                                    if (result[0]) {
+                                        interactionTR.accountFollowsUser = true
+                                    } else if (result[1]) {
+                                        var message = qsTr("Can't follow") + ": " + result[1]
+                                        rWin.notify(message)
+                                    }
+                                })
+                            }
+                        }
+                    }
+                }
+            }
+        }
         ThemedTextRectangle {
             width : parent.width
             height : userTBR.height
