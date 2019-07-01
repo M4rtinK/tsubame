@@ -14,15 +14,6 @@ BasePage {
     property string tweetURL : "https://twitter.com/" + message.user.screen_name + "/status/" + message.id_str
     headerMenu : TopMenu {
         MenuItem {
-            text: qsTr("Interact with Tweet")
-            onClicked : {
-                var messageInteractionPage = rWin.loadPage("MessageInteractionPage", {
-                    "message" : message
-                })
-                rWin.pushPageInstance(messageInteractionPage)
-            }
-        }
-        MenuItem {
             text : qsTr("Show as text")
             onClicked : {
                 rWin.log.info('showing Tweet as text: ' + message)
@@ -46,6 +37,15 @@ BasePage {
                 Qt.openUrlExternally(messagePage.tweetURL)
             }
         }
+        MenuItem {
+            text: qsTr("Interact with Tweet")
+            onClicked : {
+                var messageInteractionPage = rWin.loadPage("MessageInteractionPage", {
+                    "message" : message
+                })
+                rWin.pushPageInstance(messageInteractionPage)
+            }
+        }               
     }
 
     WebView {
