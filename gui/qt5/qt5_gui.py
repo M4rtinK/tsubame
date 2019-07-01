@@ -1145,21 +1145,63 @@ class Messages(object):
     def send_message(self, account_username, message_text, media_ids):
         """Send a Twitter message.
 
-        :param account_username: account username for API access
-        :param message_text: text of the message to send
+        :param str account_username: account username for API access
+        :param str message_text: text of the message to send
         :param media_ids: a list of media ids
-        :type media_ids: a list of ints (or else python-twitter will not consider them media ids)
+        :type media_ids: a list of strings (we later convert to ints)
         """
         # make sure all media ids are integers
+        # (Apparently Javascript or the QMl -> Python bridge
+        #  mangles the integers so we rather send them as strings.)
         integer_media_ids = [int(media_id) for media_id in media_ids]
         api = self.gui.get_twitter_api(account_username)
         message = api.PostUpdate(status=message_text, media=integer_media_ids)
         if message:
             log.info("Tweet sent from account %s", account_username)
-            return True
+            return True, ""
         else:
             log.info("Failed to send Tweet from account %s", account_username)
             return False
+
+    def post_retweet(self, account_username, status_id):
+        """Retweet a Tweet.
+
+        :param str account_username: account username for API access
+        :param str status_id: id of tweet to retweet
+        """
+        message = ""
+        try:
+            api = self.gui.get_twitter_api(account_username)
+            result = api.PostRetweet(status_id=status_id)
+            success = bool(result)
+        except twitter.TwitterError as e:
+            success = False
+            message = e.message[0].get("message", "")
+        except:
+            log.exception("retweet failed %s:%s",
+                          account_username, status_id)
+            success = False
+        return success, message
+
+    def create_favorite(self, account_username, status_id):
+        """Favorite a tweet.
+
+        :param str account_username: account username for API access
+        :param str status_id: id of tweet to favorite
+        """
+        message = ""
+        try:
+            api = self.gui.get_twitter_api(account_username)
+            result = api.CreateFavorite(status_id=status_id)
+            success = bool(result)
+        except twitter.TwitterError as e:
+            success = False
+            message = e.message[0].get("message", "")
+        except:
+            log.exception("favorite creation failed failed %s:%s",
+                          account_username, status_id)
+            success = False
+        return success, message
 
 
 class Search(object):
