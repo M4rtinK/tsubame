@@ -17,7 +17,8 @@ THEME_DEFAULT = {
         "icon_button_text" : ("black"),
         "page_header_text" : ("black"),
         "page_background" : ("black"),
-        "list_view_background" : ("#d2d2d2")
+        "list_view_background" : ("#d2d2d2"),
+        "link_color" : ("lightsteelblue"),
     }
 }
 # Theme for use with the Universal Components Controls backend.
@@ -40,7 +41,8 @@ THEME_SILICA = {
         "icon_button_toggled" :  ("#1a1a1ade"),
         "icon_button_text" :  ("white"),
         "page_header_text" :  ("white"),
-        "list_view_background" : ("transparent")
+        "list_view_background" : ("transparent"),
+        "link_color" : ("lightsteelblue"),
     }
 }
 

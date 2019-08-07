@@ -10,6 +10,7 @@ Label {
     text : (message != null) ? F.makeUsernamesClickable(message.full_text, false) : ""
     wrapMode : Text.Wrap
     textFormat : Text.StyledText
+    linkColor : rWin.theme.color.link_color
     onLinkActivated : {
         rWin.log.info('message link clicked: ' + link)
         if (link.substring(0, 1) == "@") {  // username
