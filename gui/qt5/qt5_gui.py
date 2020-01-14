@@ -987,7 +987,7 @@ class Accounts(object):
         :returns: information about the user
         :rtype: dict
         """
-        return self._get_account_cache(account_username).user_info
+        return self._get_cache_for_account(account_username).user_info
 
     def _get_cache_for_account(self, account_username):
         """Return the cached account user info & make sure it is up to date."""
