@@ -33,7 +33,27 @@ def get_lists(api):
     :param api: Twitter API instance
     :returns: list of Twitter list instances
     """
-    return api.GetLists()
+
+    #return api.GetLists()
+
+    # Let's use a modified GetLists() implementation to get arround rate limitting
+    # issues, until a proposed upstream PR is merged:
+    # https://github.com/bear/python-twitter/pull/646
+    result = []
+    cursor=-1
+    while True:
+        next_cursor, prev_cursor, lists = api.GetListsPaged(
+            user_id=None,
+            screen_name=None,
+            cursor=cursor,
+            count=500)
+        result += lists
+        if next_cursor == 0 or next_cursor == prev_cursor:
+            break
+        else:
+            cursor = next_cursor
+
+    return result
 
 def get_list_membership(api, username):
     """Get lists of which the username is member owned by the the API-user.
