@@ -138,7 +138,7 @@ class Tsubame(object):
             # so log that and fall back to the PC platform module
             log.error("unknown platform id: %s", platform_id)
             log.error("falling back to using the PC platform module")
-            from platform import platform_pc as platform_module
+            from core.platform import platform_pc as platform_module
 
         # instantiate the platform module
         self.platform = platform_module.get_module()
