@@ -7,6 +7,8 @@ from core.constants import PlatformID
 DEFAULT_PLATFORM_MODULE_ID = "pc"
 DEFAULT_GUI_MODULE_ID = "qt5"
 
+OS_RELEASE_FILE = "/etc/os-release"
+
 import logging
 log = logging.getLogger("core.platform_detection")
 
@@ -34,12 +36,25 @@ def _try_to_detect_platform():
     if qrc.is_qrc:
         return PlatformID.ANDROID
 
-    try:
-        import platform
-        if platform.node() == "Sailfish":
-            return PlatformID.SAILFISH
-    except:
-        log.exception("the Python stdlib platform module is apparently unusable on this platform")
+    # try to detect the platform based on /etc/os-release
+    if os.path.exists(OS_RELEASE_FILE):
+        try:
+            # As ConfigParser still can't parse INI files without any section headers,
+            # we need to parse this manually, yay! :P
+            # For more see: https://bugs.python.org/issue22253
+            with open("/etc/os-release", "rt") as f:
+                os_release_dict = {}
+                for line in f:
+                    k, v = line.rstrip().split("=")
+                    if v.startswith('"'):
+                        v = v[1:-1]
+                    os_release_dict[k] = v
+                os_release_id = os_release_dict.get("ID")
+                if os_release_id == "sailfishos":
+                    log.info("* Sailfish OS device detected")
+                    return PlatformID.SAILFISH
+        except:
+            log.exception("os-release parsing failed")
 
     # check CPU architecture
     import subprocess
@@ -58,21 +73,5 @@ def _try_to_detect_platform():
         if "Nokia RX-51" in cpuinfo: # N900
             log.info("* Nokia N900 detected")
             return PlatformID.N900
-
-    # check lsb_release
-    try:
-        proc = subprocess.Popen(['lsb_release', '-s', '-i'],
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        distributionId = proc.communicate()[0].decode("utf-8").lower().strip()
-        log.info("lsb_release distro id: %s ", distributionId)
-        # import pdb; pdb.set_trace()
-        if distributionId == 'mer':
-            # TODO: could be also Nemo mobile or other Mer based distro,
-            # we should probably discern those two in the future
-            log.info("* Jolla (or other Mer based device) detected")
-            return PlatformID.SAILFISH
-    except:
-        log.exception("running lsb_release during platform detection failed")
 
     return None
